@@ -1,0 +1,8 @@
+# Normalisasi line ending agar konsisten di semua sistem operasi
+* text=auto eol=lf
+
+# Berkas biner dibiarkan apa adanya
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
