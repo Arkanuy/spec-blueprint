@@ -1,0 +1,88 @@
+name: verifikasi
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  scaffold:
+    name: Uji scaffolding & kelengkapan dokumen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Struktur wajib ada
+        run: |
+          set -e
+          for f in README.md AGENTS.md SKILL.md LICENSE \
+                   docs/README.md docs/00-discovery.md docs/01-prd.md \
+                   docs/02-requirements.md docs/03-architecture.md \
+                   docs/04-workflow.md docs/05-data-model.md docs/06-ui-ux.md \
+                   docs/07-test-plan.md docs/08-roadmap.md docs/09-risks.md \
+                   docs/10-decisions.md \
+                   prompts/01-generate-docs.md prompts/02-implement-feature.md \
+                   prompts/03-code-review.md prompts/04-sync-docs.md \
+                   checklists/gate-1-sebelum-coding.md \
+                   checklists/gate-2-per-fitur-selesai.md \
+                   checklists/gate-3-sebelum-rilis.md \
+                   scripts/new_project.py; do
+            test -f "$f" || { echo "HILANG: $f"; exit 1; }
+          done
+          echo "Semua berkas wajib ada."
+
+      - name: Syntax script Python
+        run: python -m py_compile scripts/new_project.py && echo "syntax ok"
+
+      - name: Dry-run scaffolding
+        run: |
+          python scripts/new_project.py --dry-run \
+            --name "Uji CI" --type web --domain "uji" \
+            --stack "python" --owner "CI" | tail -5
+
+      - name: Generate proyek contoh lalu verifikasi
+        run: |
+          set -e
+          python scripts/new_project.py \
+            --name "Uji CI" --target ./out/uji --type web \
+            --domain "uji otomatis" --stack "python" --owner "CI" \
+            --strip-examples --no-git --non-interactive
+
+          echo "--- berkas hasil ---"
+          test -f ./out/uji/docs/01-prd.md
+          test -f ./out/uji/AGENTS.md
+          test -f ./out/uji/checklists/gate-1-sebelum-coding.md
+
+          echo "--- placeholder {{...}} harus sudah tergantikan ---"
+          if grep -rn '{{[A-Z_]*}}' ./out/uji/docs ./out/uji/AGENTS.md ./out/uji/checklists; then
+            echo "GAGAL: masih ada placeholder yang belum diganti"
+            exit 1
+          fi
+
+          echo "--- blok contoh harus sudah dibuang ---"
+          if grep -rq 'EXAMPLE-START' ./out/uji/docs; then
+            echo "GAGAL: blok contoh masih tersisa"
+            exit 1
+          fi
+
+          echo "--- nilai proyek harus terisi ---"
+          grep -q "Uji CI" ./out/uji/docs/01-prd.md
+          grep -q "uji otomatis" ./out/uji/docs/00-discovery.md
+          echo "Verifikasi selesai: scaffolding menghasilkan proyek yang benar."
+
+      - name: Pastikan target yang tidak kosong ditolak
+        run: |
+          set +e
+          python scripts/new_project.py --name "X" --target ./out/uji --no-git --non-interactive
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "GAGAL: seharusnya menolak folder yang sudah berisi"
+            exit 1
+          fi
+          echo "Benar: folder tidak kosong ditolak dengan kode $code"
