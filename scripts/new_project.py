@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Salin dokumen template ke folder proyek baru.
+"""Copy the template docs into a new project folder.
 
-Contoh:
-    python scripts/new_project.py --target ~/projects/kasir-berkah
-    python scripts/new_project.py --target ./proyek-baru --force
+Examples:
+    python scripts/new_project.py --target ~/projects/my-app
+    python scripts/new_project.py --target ./my-app --force
 
-Yang disalin: docs/ (sembilan dokumen kosong) + AGENTS.md (kontrak untuk agen AI).
-Semuanya masih kosong dan memang untuk kamu isi sendiri.
+What gets copied: docs/ (nine empty documents) + AGENTS.md (the contract for AI agents).
+Everything is still empty and is meant for you to fill in yourself.
 """
 
 from __future__ import annotations
@@ -19,82 +19,83 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
-# Sumber ditulis ATURAN-AGEN.md supaya berkas di repo ini tidak disalahartikan sebagai
-# kontrak untuk repo ini sendiri. Di folder proyek hasil, namanya dikembalikan ke AGENTS.md.
-AGENTS_SRC = REPO_ROOT / "templates" / "ATURAN-AGEN.md"
+# The source file is deliberately NOT named AGENTS.md inside this repo: a file with that name
+# would be read as the contract for THIS repo by most AI agents, and the kit would be mistaken
+# for an application project. It is renamed on the way out.
+AGENTS_SRC = REPO_ROOT / "AGENT-RULES.md"
 AGENTS_NAME = "AGENTS.md"
 
 
-class SalinError(Exception):
-    """Kesalahan yang bisa dijelaskan ke pengguna tanpa pelacakan tumpukan."""
+class CopyError(Exception):
+    """An error that can be explained to the user without a stack trace."""
 
 
 def normalize_target(raw: str) -> str:
-    """Ubah path gaya MSYS (/c/Users/...) jadi gaya Windows (C:/Users/...).
+    """Turn an MSYS-style path (/c/Users/...) into a Windows-style one (C:/Users/...).
 
-    Di Git Bash, konversi path otomatis kadang dimatikan, sehingga /c/Users/x
-    diteruskan apa adanya dan terbaca sebagai C:\\c\\Users\\x.
+    Under Git Bash, automatic path conversion is sometimes disabled, so /c/Users/x is passed
+    through unchanged and read as C:\\c\\Users\\x.
     """
     if sys.platform.startswith("win") and re.match(r"^/[a-zA-Z]/", raw):
         return f"{raw[1].upper()}:{raw[2:]}"
     return raw
 
 
-def berkas_sumber() -> list[tuple[Path, Path]]:
-    """Pasangan (sumber, tujuan relatif) yang akan disalin."""
+def source_files() -> list[tuple[Path, Path]]:
+    """Pairs of (source, destination-relative) that will be copied."""
     if not DOCS_DIR.is_dir():
-        raise SalinError(f"Folder docs/ tidak ditemukan di {REPO_ROOT}")
+        raise CopyError(f"docs/ not found in {REPO_ROOT}")
     if not AGENTS_SRC.is_file():
-        raise SalinError(f"{AGENTS_SRC.relative_to(REPO_ROOT)} tidak ditemukan di {REPO_ROOT}")
+        raise CopyError(f"{AGENTS_SRC.relative_to(REPO_ROOT)} not found in {REPO_ROOT}")
 
-    pasangan: list[tuple[Path, Path]] = []
+    pairs: list[tuple[Path, Path]] = []
     for f in sorted(DOCS_DIR.glob("*.md")):
-        pasangan.append((f, Path("docs") / f.name))
-    pasangan.append((AGENTS_SRC, Path(AGENTS_NAME)))
-    return pasangan
+        pairs.append((f, Path("docs") / f.name))
+    pairs.append((AGENTS_SRC, Path(AGENTS_NAME)))
+    return pairs
 
 
-def jalankan(args: argparse.Namespace) -> int:
-    tujuan = Path(normalize_target(args.target)).expanduser().resolve()
+def run(args: argparse.Namespace) -> int:
+    target = Path(normalize_target(args.target)).expanduser().resolve()
 
-    if tujuan == REPO_ROOT:
-        print("Gagal: tujuan sama dengan repo template. Pakai --target ke folder proyekmu.",
+    if target == REPO_ROOT:
+        print("Error: target is the template repo itself. Point --target at your project folder.",
               file=sys.stderr)
         return 2
 
-    if tujuan.exists() and any(tujuan.iterdir()) and not args.force:
-        print(f"Gagal: {tujuan} sudah ada dan tidak kosong.\n"
-              f"Pakai --force kalau memang mau menulis ke sana.", file=sys.stderr)
+    if target.exists() and any(target.iterdir()) and not args.force:
+        print(f"Error: {target} already exists and is not empty.\n"
+              f"Use --force if you really want to write there.", file=sys.stderr)
         return 2
 
-    pasangan = berkas_sumber()
+    pairs = source_files()
 
     if args.dry_run:
-        print(f"Tujuan : {tujuan}")
-        print(f"Berkas : {len(pasangan)}")
-        for sumber, rel in pasangan:
-            print(f"  {rel}   (dari {sumber.relative_to(REPO_ROOT)})")
+        print(f"Target : {target}")
+        print(f"Files  : {len(pairs)}")
+        for source, rel in pairs:
+            print(f"  {rel}   (from {source.relative_to(REPO_ROOT)})")
         return 0
 
     try:
-        for sumber, rel in pasangan:
-            out = tujuan / rel
+        for source, rel in pairs:
+            out = target / rel
             out.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(sumber, out)
+            shutil.copy2(source, out)
     except OSError as exc:
-        print(f"Gagal menulis berkas: {exc}", file=sys.stderr)
+        print(f"Error writing files: {exc}", file=sys.stderr)
         return 1
 
-    jumlah_dok = len(pasangan) - 1
-    print(f"Tujuan : {tujuan}")
-    print(f"Disalin: {len(pasangan)} berkas ({jumlah_dok} dokumen + {AGENTS_NAME})")
+    doc_count = len(pairs) - 1
+    print(f"Target : {target}")
+    print(f"Copied : {len(pairs)} files ({doc_count} documents + {AGENTS_NAME})")
     print(f"""
-Selesai. Langkah berikutnya:
-  cd "{tujuan}"
-  1. Isi docs/00-masalah.md   (masalah, akar masalah, pilihan solusi)
-  2. Isi docs/01-kebutuhan.md (fitur, kebutuhan ber-ID, kriteria penerimaan)
-  3. Isi docs/02-desain.md dan seterusnya sesuai urutan di docs/README.md
-  4. Isi bagian identitas di {AGENTS_NAME} sebelum minta agen AI menulis kode
+Done. Next steps:
+  cd "{target}"
+  1. Fill in docs/00-problem.md      (problem, root cause, solution alternatives)
+  2. Fill in docs/01-requirements.md (features, requirements with IDs, acceptance criteria)
+  3. Continue with docs/02-design.md and the rest, in the order listed in docs/README.md
+  4. Fill in the header of {AGENTS_NAME} before asking an AI agent to write code
 """)
     return 0
 
@@ -102,24 +103,24 @@ Selesai. Langkah berikutnya:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="new_project.py",
-        description="Salin dokumen template (docs/ + AGENTS.md) ke folder proyek baru.",
+        description="Copy the template docs (docs/ + AGENTS.md) into a new project folder.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--target", required=True,
-                   help="Folder proyek baru. Wajib — script tidak menebak tujuan.")
+                   help="New project folder. Required — the script never guesses a target.")
     p.add_argument("--force", action="store_true",
-                   help="Izinkan menulis ke folder yang sudah berisi berkas")
+                   help="Allow writing into a folder that already contains files")
     p.add_argument("--dry-run", action="store_true",
-                   help="Tampilkan rencana, tidak menulis apa pun")
+                   help="Show the plan without writing anything")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        return jalankan(args)
-    except SalinError as exc:
-        print(f"Gagal: {exc}", file=sys.stderr)
+        return run(args)
+    except CopyError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         return 2
 
 

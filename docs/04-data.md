@@ -1,75 +1,75 @@
 # 04 — Data
 
-> Setiap entitas harus dipakai minimal satu proses. Kalau tidak dipakai, hapus.
+> Every entity must be used by at least one process. If it is not used, delete it.
 
-**Proyek:**
-**Tanggal:**
+**Project:**
+**Date:**
 
 ---
 
-## 1. Entitas
+## 1. Entities
 
-| Entitas | Isinya | Dipakai oleh proses | Kebutuhan data |
+| Entity | Content | Used by process | Data requirements |
 |---|---|---|---|
 | | | | |
 | | | | |
 
 ---
 
-## 2. Rincian kolom
+## 2. Field details
 
-Salin blok di bawah untuk setiap entitas.
+Copy the block below for each entity.
 
-### Entitas: ______
+### Entity: ______
 
-| Kolom | Tipe | Wajib | Aturan / validasi | Keterangan |
+| Field | Type | Required | Rule / validation | Notes |
 |---|---|---|---|---|
 | | | | | |
 | | | | | |
 
 ---
 
-## 3. Hubungan
+## 3. Relationships
 
-| Entitas A | Hubungan | Entitas B | Catatan |
+| Entity A | Relationship | Entity B | Notes |
 |---|---|---|---|
-| | 1 ke banyak | | |
+| | 1 to many | | |
 | | | | |
 
 ---
 
-## 4. Aturan data
+## 4. Data rules
 
-| # | Aturan | Ditegakkan di mana |
+| # | Rule | Enforced where |
 |---|---|---|
 | | | |
 | | | |
 
 ---
 
-## 5. Daur hidup data
+## 5. Data lifecycle
 
-| Tahap | Yang terjadi | Siapa yang boleh |
+| Stage | What happens | Who may |
 |---|---|---|
-| Dibuat | | |
-| Diubah | | |
-| Dikunci | | |
-| Diarsipkan | | |
-| Dihapus | | |
+| Created | | |
+| Updated | | |
+| Locked | | |
+| Archived | | |
+| Deleted | | |
 
 ---
 
-## 6. Data sensitif
+## 6. Sensitive data
 
-| Data | Kenapa sensitif | Siapa yang boleh lihat | Cara melindungi |
+| Data | Why sensitive | Who may view | How to protect |
 |---|---|---|---|
 | | | | |
 | | | | |
 
 ---
 
-## 7. Migrasi data lama
+## 7. Legacy data migration
 
-**Ada data lama?** 
+**Is there old data?** 
 
-Kalau ada: dari mana, bentuknya apa, bagaimana dipindahkan.
+If so: where from, what shape is it, and how is it moved.
