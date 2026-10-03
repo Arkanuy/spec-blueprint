@@ -132,7 +132,7 @@ jobs:
           python -m app produk tambah --sku A1 --nama "Kopi" --harga 3500 --stok 10
           python -m app produk daftar
           python -m app jual --produk A1:2 --bayar 10000 --kasir "CI"
-          python -m app rekap
+          python -m app rekap --tanggal "$(date +%Y-%m-%d)"
           echo "--- kasus gagal harus ditolak ---"
           set +e
           python -m app jual --produk A1:999 --bayar 100000 --kasir "CI"
