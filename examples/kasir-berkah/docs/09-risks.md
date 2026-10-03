@@ -21,7 +21,7 @@ Bedakan dengan jelas:
 | R-01 | Kasir kembali memakai nota kertas karena sistem terasa lebih lambat/membingungkan | operasional | Sedang | Tinggi | 6 | Uji keselamatan di hari pertama; sediakan pendamping; sederhanakan perintah; ukur waktu per transaksi sebelum rilis | Pemilik | Terbuka |
 | R-02 | Perangkat toko lambat sehingga simpan transaksi > 1 detik (NFR-005) | teknis | Sedang | Sedang | 4 | Ukur pada perangkat nyata (Q-04); batasi ukuran data; operasi tulis minimal | Developer | Terbuka |
 | R-03 | Data hilang karena berkas `kasir.db` rusak atau terhapus tanpa cadangan | data | Sedang | Tinggi | 6 | Wajibkan pencadangan harian (salin berkas) sebelum tutup; uji pemulihan; jangan simpan di folder sementara | Pemilik | Terbuka |
-| R-04 | Penyalahgunaan pembatalan untuk menutupi selisih kas | keamanan | Rendah | Tinggi | 3 | Pembatalan hanya pemilik (ADR-004); alasan wajib tertulis; transaksi batal tetap terlihat di data | Pemilik | Terbuka |
+| R-04 | Penyalahgunaan pembatalan untuk menutupi selisih kas | keamanan | Sedang | Tinggi | 6 | **Tidak ada penegakan teknis**: wewenang pembatalan ada di Pemilik (ADR-004) tapi kode tidak memeriksa peran, karena belum ada autentikasi. Mitigasi berjalan: alasan wajib tertulis (BR-007), maksimal sekali (BR-006), transaksi batal tetap terlihat di data | Pemilik | Terbuka |
 | R-05 | Stok sistem tidak cocok dengan rak karena kelalaian di luar sistem | data | Tinggi | Sedang | 6 | Rekap harian dipakai membandingkan; pembatalan mengembalikan stok; siapkan prosedur hitung fisik berkala | Pemilik | Terbuka |
 | R-06 | Harga master diubah setelah transaksi lama; transaksi lama ikut berubah | data | Rendah | Tinggi | 3 | Harga disalin ke `sale_items.harga_satuan` saat transaksi dibuat (ADR-003) | Developer | Tertutup (sudah dirancang) |
 | R-07 | Requirement bertambah di tengah jalan (mis. minta multi-cabang) | organisasi | Sedang | Sedang | 4 | Perubahan scope hanya lewat `10-decisions.md`; semua usulan baru masuk "ide tunda" | Pemilik | Terbuka |
@@ -31,7 +31,7 @@ Bedakan dengan jelas:
 
 Skor = Kemungkinan × Dampak (Rendah=1, Sedang=2, Tinggi=3). Skor ≥6 wajib punya rencana penanganan sebelum coding dimulai.
 
-Risiko berskor ≥ 6 yang wajib ditangani lebih dulu: **R-01, R-03, R-05, R-10**. R-02 (skor 4) dipantau dan diukur di perangkat nyata.
+Risiko berskor ≥ 6 yang wajib ditangani lebih dulu: **R-01, R-03, R-04, R-05, R-10**. R-02 (skor 4) dipantau dan diukur di perangkat nyata.
 
 ### 1.1 Risiko yang paling sering muncul di proyek seperti ini
 
@@ -68,7 +68,7 @@ Aturan: asumsi yang **berdampak besar** dan **belum diverifikasi** harus diperik
 |---|---|---|---|---|---|
 | Q-01 | Berapa jumlah transaksi per hari dan berapa jumlah kasir? | Perkiraan beban & target NFR-005; validasi asumsi operasional | Pemilik | 2026-10-10 | Terbuka |
 | Q-02 | Berapa besar selisih kas dan selisih stok per bulan saat ini? | Baseline metrik M-2 dan M-3 | Pemilik | 2026-10-17 | Terbuka |
-| Q-03 | Siapa yang boleh membatalkan transaksi — kasir atau hanya pemilik? | Hak akses `batal`; saat ini diputuskan hanya pemilik (ADR-004) | Pemilik | 2026-10-07 | Terbuka |
+| Q-03 | Siapa yang boleh membatalkan transaksi — kasir atau hanya pemilik? | **Terjawab 2026-10-03:** wewenang Pemilik (ADR-004). Penegakannya organisasi, bukan teknis, karena tidak ada autentikasi. Pemicu untuk membangun autentikasi: ada kasir tambahan atau lebih dari satu terminal | Pemilik | 2026-10-07 | Terjawab |
 | Q-04 | Perangkat apa yang dipakai dan berapa spesifikasinya? | Validasi NFR-005 dan A-02 | Pemilik/Kasir | 2026-10-10 | Terbuka |
 | Q-05 | Kapan tenggat proyek ini? | Target milestone M1–M3 dan pengurutan prioritas | Pemilik | 2026-10-10 | Terbuka |
 | Q-06 | Berapa jumlah SKU yang akan didaftarkan? | Keputusan perlu/tidak pencarian produk di F-01 | Pemilik | 2026-10-17 | Terbuka |

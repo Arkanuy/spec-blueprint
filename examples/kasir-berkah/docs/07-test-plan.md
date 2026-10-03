@@ -34,7 +34,7 @@ python -m unittest discover -s tests -v
 | Lokal | `cd <folder proyek>` lalu `python -m unittest discover -s tests -v`; uji memakai basis data sementara lewat env `KASIR_DB` |
 | Data uji | Produk contoh: `BRS-5KG` (harga 65000, stok 20), `MNY-1L` (harga 18000, stok 30), `GLA-1KG` (harga 15000, stok 10) |
 | Perangkat/browser | Komputer/laptop toko; tidak ada browser (CLI) |
-| Akun uji | Tidak ada login. Peran diuji lewat argumen peran pada alur (kasir = semua kecuali `batal`; pemilik = termasuk `batal`) |
+| Akun uji | Tidak ada login. Aturan peran diuji lewat skenario: kasir tidak menjalankan `batal`; pemilik yang menjalankan. Yang diuji sistemnya adalah aturan BR-006/BR-007 (maksimal sekali, alasan ≥ 5), bukan peran — lihat `03-architecture.md` bagian 7 |
 
 Aturan: setiap uji dijalankan pada basis data sementara (bukan `kasir.db` nyata), supaya data toko tidak terganggu.
 
