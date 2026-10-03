@@ -70,8 +70,8 @@ Sistem tidak berbicara dengan layanan eksternal apa pun. Satu-satunya mitra adal
 |---|---|---|---|---|
 | `app/__main__.py` (CLI) | Menerjemahkan perintah baris ke pemanggilan layanan; mencetak hasil/kesalahan; menentukan kode keluar | `argparse` | Pustaka standar; tidak perlu instalasi; perintah bisa dibaca kasir | Wajib dipanggil dengan `python -m app` |
 | `app/layanan.py` (logika bisnis) | Menegakkan BR-001…BR-010, menghitung total/kembalian, mengubah stok, menandai batal | Python murni | Menyimpan aturan di satu tempat yang bisa diuji tanpa CLI | Tidak menulis langsung ke berkas; lewat lapisan data |
-| `app/data.py` (lapisan data) | Membuka koneksi, menjalankan skema, membaca/menulis `products`, `sales`, `sale_items`; memakai transaksi SQLite | `sqlite3` | Pustaka standar; mendukung transaksi ACID; berkas portabel | Tabel dan indeks dibuat saat pertama dijalankan |
-| Skema `schema.sql` | Mendefinisikan 3 tabel dan indeks | SQLite DDL | Sumber tunggal struktur tabel, dijalankan sekali | Perubahan skema harus lewat migrasi sederhana |
+| `app/db.py` (lapisan data) | Membuka koneksi, membuat skema 3 tabel + indeks, membaca/menulis `products`, `sales`, `sale_items`; memakai transaksi SQLite | `sqlite3` | Pustaka standar; mendukung transaksi ACID; berkas portabel | Tabel dan indeks dibuat saat pertama dijalankan (fungsi `siapkan_skema`) |
+| `app/db.py` — DDL 3 tabel (`products`, `sales`, `sale_items`) + indeks, dijalankan saat pertama | Skema didefinisikan di dalam kode, bukan berkas `.sql` terpisah | Kode dan skema tidak bisa berbeda versi; cukup satu berkas yang disalin ke perangkat toko | Perubahan skema harus lewat fungsi migrasi sederhana, bukan mengedit DDL yang sudah jalan |
 | `tests/` | Bukti setiap FR via `unittest` | `unittest` | Pustaka standar; bisa dijalankan siapa saja | Basis data sementara per uji |
 | Berkas `kasir.db` | Menyimpan data nyata | SQLite | Tanpa server; tetap ada setelah proses ditutup (NFR-001) | Path dari env `KASIR_DB`, default `kasir.db` |
 
@@ -99,7 +99,7 @@ Aturan: satu komponen, satu tanggung jawab. Lapisan logika dan lapisan data dipi
              ▼
   ┌─────────────────────┐
   │  Lapisan data       │   products | sales | sale_items
-  │  data.py + schema   │
+  │  db.py + skema DDL  │
   └──────────┬──────────┘
              │ sqlite3 (ACID, transaksional)
              ▼
@@ -162,7 +162,7 @@ Sistem ini CLI, jadi kontraknya adalah perintah. Setiap perintah harus terhubung
 | `python -m app produk daftar` | Menampilkan daftar produk | – | daftar SKU, nama, harga, stok | Kasir | FR-001 | 0 / 2 |
 | `python -m app jual --produk SKU:QTY [--produk SKU:QTY ...] --bayar 50000 --kasir "Nadia"` | Mencatat penjualan | daftar SKU:QTY, bayar, kasir | kode transaksi, total, kembalian | Kasir | FR-002…FR-007 | 0 / 1 (stok kurang, bayar kurang, qty tidak valid, SKU ganda) |
 | `python -m app rekap --tanggal 2026-10-03` | Rekap harian | tanggal | jumlah transaksi, total penjualan, total item terjual | Pemilik | FR-008, FR-009 | 0 / 1 (format tanggal salah) |
-| `python -m app batal --kode TRX-20261003-001 --alasan "salah input"` | Membatalkan transaksi | kode, alasan | konfirmasi status DIBATALKAN + stok kembali | Pemilik | FR-010…FR-012 | 0 / 1 (alasan < 5, sudah dibatalkan, kode tak ada) |
+| `python -m app batal --kode TRX-20261003-001 --alasan "salah input"` | Membatalkan transaksi | kode, alasan | konfirmasi status DIBATALKAN + stok kembali | Pemilik (wewenang, bukan pemeriksaan sistem — lihat bagian 7) | FR-010…FR-012 | 0 / 1 (alasan < 5, sudah dibatalkan, kode tak ada) |
 
 Kode keluar (exit code): `0` berhasil, `1` kesalahan aturan bisnis (pesan jelas ke stderr), `2` salah pemakaian perintah.
 
@@ -174,20 +174,28 @@ Kode keluar (exit code): `0` berhasil, `1` kesalahan aturan bisnis (pesan jelas 
 
 ---
 
-## 7. Model otorisasi
+## 7. Otorisasi: apa yang ditegakkan, apa yang tidak
 
-| Peran | Bisa melihat | Bisa membuat | Bisa mengubah | Bisa menghapus | Catatan |
-|---|---|---|---|---|---|
-| Kasir | Daftar produk; rekap harian | Produk baru; transaksi penjualan | Stok (hanya lewat penjualan, tidak bisa minta ubah bebas) | Tidak bisa apa pun | Tidak boleh membatalkan transaksi |
-| Pemilik | Semua yang kasir lihat | Produk baru | Membatalkan transaksi (ubah status SELESAI → DIBATALKAN) | Tidak (data transaksi tidak dihapus) | Pemilik ikut menjaga toko, jadi juga bisa memakai semua perintah kasir |
+Ini bagian yang paling gampang ditulis menyesatkan, jadi ditulis apa adanya.
 
-**Keputusan yang diputuskan di sini (menjawab Q-03):** pembatalan transaksi **hanya boleh dilakukan Pemilik**, bukan kasir.
+| Peran | Boleh secara aturan bisnis | Ditegakkan sistem? |
+|---|---|---|
+| Kasir | Lihat produk; tambah produk; catat penjualan | Tidak ada pemeriksaan — semua perintah bisa dijalankan siapa pun |
+| Pemilik | Semua yang kasir lakukan + memutuskan pembatalan transaksi | Tidak ada pemeriksaan — sama seperti di atas |
 
-**Alasan:** pembatalan mengembalikan stok dan menghapus nilai transaksi dari rekap. Kalau kasir bisa melakukannya sendiri, ada celah menutupi selisih kas (uang sudah diambil, transaksi lalu dibatalkan). Dengan menaruh hak ini di pemilik, pembatalan yang sah tetap bisa dilakukan (pemilik ada di toko) tetapi tidak bisa dipakai untuk menutupi selisih oleh orang yang memegang kas. Alasannya juga tercatat di [10-decisions.md](10-decisions.md) ADR-004.
+**Keputusan yang diambil di sini (menjawab Q-03):** pembatalan transaksi adalah **wewenang Pemilik**, bukan kasir.
 
-Catatan penting: hak akses **ditegakkan di lapisan logika**, bukan hanya dengan menyembunyikan perintah. Perintah `batal` memeriksa peran pemanggil sebelum mengubah status; kalau bukan Pemilik, perintah berhenti dengan kode keluar 1 dan pesan dalam Bahasa Indonesia.
+**Alasan:** pembatalan mengembalikan stok dan mengeluarkan transaksi dari rekap. Kalau kasir bisa melakukannya sendiri, ada celah menutupi selisih kas (uang sudah diambil, transaksi lalu dibatalkan). Menaruh wewenang ini di pemilik menutup celah itu, sementara pembatalan yang sah tetap bisa dilakukan karena pemilik ada di toko. Alasan lengkap di [10-decisions.md](10-decisions.md) ADR-004.
 
-Catatan teknis: karena tidak ada login berbasis password (di luar scope), penegakan peran dilakukan lewat argumen peran pada sesi/terminal yang dikendalikan pemilik. Batas keamanan nyata proyek ini adalah **fisik** (siapa memegang terminal), dan itu dicatat sebagai risiko R-04 di [09-risks.md](09-risks.md).
+**Yang penting dan sering diklaim keliru:** wewenang ini **tidak** ditegakkan oleh sistem. Kode tidak memeriksa peran pemanggil, karena:
+
+1. Tidak ada autentikasi (login) di luar scope P0 — satu terminal, dua orang yang saling percaya.
+2. Menambahkan argumen peran (`--peran pemilik`) tanpa autentikasi **bukan pengamanan**: kasir cukup mengetik nilai itu dan kontrolnya hilang. Itu jenis pengamanan palsu yang sama dengan menyembunyikan tombol di tampilan.
+
+Jadi kontrolnya bersifat **organisasi, bukan teknis**: perintah `batal` tidak dijalankan dari terminal yang dipegang kasir; keputusan pembatalan diambil pemilik. Batas keamanan nyata proyek ini adalah **fisik** (siapa memegang terminal), dan itu dicatat sebagai risiko R-04 di [09-risks.md](09-risks.md).
+
+**Kapan ini harus berubah:** begitu ada kasir tambahan, lebih dari satu terminal, atau data yang perlu dibatasi per orang, autentikasi menjadi prasyarat — bukan nilai tambah. Pemicunya dicatat di Q-03.
+
 
 ---
 
@@ -197,15 +205,18 @@ Catatan teknis: karena tidak ada login berbasis password (di luar scope), penega
 kasir-berkah/
 ├── app/
 │   ├── __init__.py
-│   ├── __main__.py     # CLI: argparse, kode keluar
-│   ├── layanan.py      # aturan bisnis BR-001..BR-010
-│   ├── data.py         # akses SQLite, transaksi
-│   └── schema.sql      # DDL 3 tabel + indeks
+│   ├── __main__.py     # entry point: python -m app
+│   ├── cli.py          # argparse, subcommand, kode keluar, format keluaran
+│   ├── layanan.py      # aturan bisnis BR-001..BR-010, hitung total/kembalian, stok
+│   ├── db.py           # akses SQLite: skema 3 tabel + indeks, path dari KASIR_DB
+│   └── kesalahan.py    # KesalahanAturan: pelanggaran aturan bisnis -> kode keluar 1
 ├── tests/
-│   ├── test_produk.py
-│   ├── test_jual.py
+│   ├── __init__.py
+│   ├── dukungan.py     # helper: basis data sementara per test
+│   ├── test_penjualan.py
+│   ├── test_pembatalan.py
 │   ├── test_rekap.py
-│   └── test_batal.py
+│   └── test_cli.py
 ├── docs/               # dokumen spec ini
 ├── README.md
 └── kasir.db            # dibuat saat pertama dijalankan (tidak masuk git)

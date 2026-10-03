@@ -97,7 +97,7 @@ Sebuah fitur baru boleh dianggap selesai kalau **semua** poin ini benar:
 - [ ] Perilaku sesuai FR dan kriteria penerimaan
 - [ ] Aturan bisnis terkait ditegakkan di lapisan logika, bukan hanya di CLI
 - [ ] Status kosong, dan error sudah ditangani (memuat tidak berlaku untuk operasi lokal < 1 detik)
-- [ ] Hak akses diperiksa di lapisan logika (`batal` hanya pemilik)
+- [ ] Hak akses diperiksa di lapisan logika (`batal` hanya pemilik) — **tidak berlaku di contoh ini**: tidak ada autentikasi, jadi peran tidak ditegakkan sistem (lihat `docs/03-architecture.md` bagian 7). Kotak ini tetap ada di checklist sebagai pengingat; proyek yang punya autentikasi wajib mencentangnya
 - [ ] Validasi input ada dan pesannya jelas
 - [ ] Kasus uji terkait lulus, dengan bukti
 - [ ] Dokumentasi (`02`–`06`) diperbarui kalau ada yang berubah

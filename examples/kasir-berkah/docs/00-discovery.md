@@ -197,5 +197,5 @@ Pindahkan semua ketidakpastian ke [09-risks.md](09-risks.md) dengan nomor `Q-xx`
 
 - Q-01: Berapa jumlah transaksi per hari dan berapa jumlah kasir? Belum pernah dicatat terpisah dari nota. Jawabannya menentukan perkiraan beban dan target NFR-005. Tenggat: 2026-10-10.
 - Q-02: Berapa besar selisih kas dan selisih stok per bulan saat ini? Belum ada angka dasar untuk mengukur perbaikan. Tenggat: 2026-10-17.
-- Q-03: Apakah kasir mengizinkan pembatalan transaksi, atau hanya pemilik? Keputusan ini memengaruhi matriks hak akses di [03-architecture.md](03-architecture.md). Tenggat: 2026-10-07.
+- Q-03: **Terjawab** — pembatalan adalah wewenang Pemilik (lihat [10-decisions.md](10-decisions.md) ADR-004). Penegakannya bersifat organisasi, bukan teknis, karena autentikasi berada di luar scope P0. Tercatat ulang di [03-architecture.md](03-architecture.md) bagian 7.
 - Q-04: Di perangkat apa aplikasi dijalankan (laptop toko atau komputer kasir) dan berapa spesifikasinya? Menentukan apakah NFR-005 terpenuhi. Tenggat: 2026-10-10.

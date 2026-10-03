@@ -274,7 +274,7 @@ Hal yang dianggap benar tapi belum diverifikasi. Kalau asumsi ini ternyata salah
 |---|---|---|---|---|
 | Q-01 | Berapa jumlah transaksi per hari dan berapa jumlah kasir? | Perkiraan beban & target NFR-005 | Pemilik | Terbuka |
 | Q-02 | Berapa besar selisih kas/stok saat ini? | Baseline metrik M-2 dan M-3 | Pemilik | Terbuka |
-| Q-03 | Siapa yang boleh membatalkan transaksi, kasir atau hanya pemilik? | Matriks hak akses di `03-architecture.md` | Pemilik | Terbuka |
+| Q-03 | Siapa yang boleh membatalkan transaksi, kasir atau hanya pemilik? | **Terjawab:** wewenang Pemilik (ADR-004); penegakannya organisasi, bukan teknis, karena tidak ada autentikasi | Pemilik | 2026-10-07 | Terjawab |
 | Q-04 | Perangkat apa yang dipakai dan spesifikasinya? | Validasi NFR-005 | Pemilik/Kasir | Terbuka |
 
 ---

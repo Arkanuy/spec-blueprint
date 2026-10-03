@@ -57,15 +57,16 @@ Konsekuensi: [yang jadi lebih mudah + yang jadi lebih sulit]
 - **Alternatif yang ditolak:** Hanya menyimpan `product_id` dan selalu membaca harga master — transaksi lama ikut berubah saat harga naik, sehingga rekap dan sengketa harga menjadi tidak dapat dipercaya. Menyimpan harga di luar basis data (mis. di nota) — mengembalikan masalah asal.
 - **Konsekuensi:** Riwayat harga utuh dan rekap historis bisa dipercaya. Yang jadi lebih sulit: penyimpanan sedikit lebih besar dan setiap baris harus dijaga agar tidak diubah setelah tersimpan.
 
-### ADR-004 — Pembatalan hanya sekali dan hanya oleh pemilik
+### ADR-004 — Pembatalan maksimal sekali, wewenang Pemilik (tanpa penegakan teknis)
 
 - **Tanggal:** 2026-10-03
 - **Status:** Disetujui
-- **Konteks:** Transaksi salah input harus bisa dianulir, tetapi pembatalan juga bisa disalahgunakan untuk menutupi selisih kas (uang sudah diambil, transaksi lalu dibatalkan).
-- **Keputusan:** Transaksi berstatus SELESAI boleh dibatalkan maksimal satu kali (BR-006), hanya oleh Pemilik, dengan alasan minimal 5 karakter (BR-007). Pembatalan mengembalikan stok (BR-008) dan mengeluarkan transaksi dari rekap (FR-009). Kode tertutup: `batal` memeriksa status dan peran sebelum mengubah apa pun.
-- **Alasan:** Membatasi celah penyalahgunaan pada orang yang memegang kas (kasir), sambil tetap memberi pemilik cara membetulkan salah input. Alasan yang tertulis membuat pembatalan bisa dipertanggungjawabkan.
-- **Alternatif yang ditolak:** Boleh dibatalkan siapa saja berkali-kali — membuka celah selisih kas dan laporan yang bisa diubah berkali-kali tanpa jejak. Pembatalan tanpa alasan — tidak ada jejak audit. Menghapus transaksi salah — menghilangkan jejak dan membuat stok tidak bisa dipulihkan dengan pasti.
-- **Konsekuensi:** Selisih kas lebih sulit disembunyikan dan laporan lebih dipercaya. Yang jadi lebih sulit: pembatalan sah harus menunggu pemilik, dan tidak ada koreksi sebagian (partial refund) — salah input diperbaiki dengan batal lalu input ulang.
+- **Konteks:** Transaksi salah input harus bisa dianulir, tetapi pembatalan juga bisa disalahgunakan untuk menutupi selisih kas (uang sudah diambil, transaksi lalu dibatalkan). Kasir yang memegang kas tidak boleh bisa membatalkan transaksinya sendiri.
+- **Keputusan:** Transaksi berstatus SELESAI boleh dibatalkan maksimal satu kali (BR-006), dengan alasan minimal 5 karakter (BR-007). Pembatalan mengembalikan stok (BR-008) dan mengeluarkan transaksi dari rekap (FR-009). Wewenang pembatalan ada di Pemilik. **Penegakan wewenang itu bersifat organisasi, bukan teknis**: kode hanya memeriksa status dan alasan, tidak memeriksa peran.
+- **Alasan:** Yang bisa ditegakkan sistem tanpa autentikasi adalah batas frekuensi dan syarat alasan — dan itu sudah ditegakkan. Menambah pemeriksaan peran tanpa autentikasi tidak menambah keamanan apa pun: argumen peran bisa diketik siapa saja yang memegang terminal. Menuliskan ini apa adanya lebih berguna daripada mengklaim kontrol yang tidak ada.
+- **Alternatif yang ditolak:** (a) Boleh dibatalkan siapa saja berkali-kali — membuka celah selisih kas dan laporan yang bisa diubah berulang tanpa jejak. (b) Pembatalan tanpa alasan — tidak ada jejak audit. (c) Menghapus transaksi salah — menghilangkan jejak dan stok tidak bisa dipulihkan dengan pasti. (d) Menambahkan argumen `--peran pemilik` — pengamanan palsu, sama jenisnya dengan menyembunyikan tombol di tampilan.
+- **Konsekuensi:** Selisih kas lebih sulit disembunyikan dan laporan lebih dipercaya. Yang jadi lebih sulit: pembatalan sah harus menunggu pemilik, tidak ada koreksi sebagian (partial refund), dan **tidak ada jaminan teknis** selama autentikasi belum dibuat. Pemicu perubahan: begitu ada kasir tambahan atau lebih dari satu terminal, autentikasi menjadi prasyarat (Q-03).
+
 
 ### ADR-005 — SQLite sebagai basis data
 
@@ -115,7 +116,7 @@ Kalau ada jawaban "tidak", masukkan ke **ide tunda** di `01-prd.md` — jangan d
 
 | # | Keputusan yang dibutuhkan | Menghambat apa | Pilihan yang tersedia | Tenggat | Siapa yang memutuskan |
 |---|---|---|---|---|---|
-| 1 | Siapa boleh membatalkan transaksi (Q-03) | Hak akses `batal` | Kasir saja / Pemilik saja / keduanya | 2026-10-07 | Pemilik |
+| 1 | Siapa boleh membatalkan transaksi (Q-03) | Peran yang berwenang | Kasir saja / Pemilik saja / keduanya | 2026-10-07 | Pemilik (penegakan organisasi, bukan teknis — lihat ADR-004) |
 | 2 | Tenggat proyek & target milestone (Q-05) | Target M1–M3 di `08-roadmap.md` | Berbagai tanggal | 2026-10-10 | Pemilik |
 | 3 | Perangkat target & spesifikasi (Q-04) | Validasi NFR-005 | Perangkat yang ada / perangkat baru | 2026-10-10 | Pemilik |
 
@@ -144,3 +145,4 @@ Diisi menjelang akhir fase atau setelah masalah besar. Berguna agar tidak mengul
 | Versi | Tanggal | Perubahan | Alasan |
 |---|---|---|---|
 | 0.1 | 2026-10-03 | Dokumen dibuat | Awal proyek |
+| 0.2 | 2026-10-03 | ADR-004 diperbaiki: klaim "penegakan peran di lapisan logika" dihapus, diganti penjelasan bahwa wewenang Pemilik bersifat organisasi dan tidak ditegakkan kode | Kode tidak memeriksa peran sama sekali (tidak ada autentikasi). Dokumen sebelumnya mengklaim kontrol yang tidak ada — persis kesalahan yang dokumen ini seharusnya cegah |

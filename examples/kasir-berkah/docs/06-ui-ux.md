@@ -137,7 +137,7 @@ Ulangi blok berikut untuk setiap layar prioritas. Layar P0 wajib lengkap.
 | Berhasil | Produk tersimpan | `Produk ditambahkan: <SKU> — <Nama> (Rp<harga>, stok <n>)` | – |
 | Gagal validasi | SKU sudah ada; harga/stok negatif; nama kosong | `Gagal: SKU '<sku>' sudah dipakai. Pakai SKU lain.` / `Gagal: harga harus bilangan bulat ≥ 0.` / `Gagal: nama produk tidak boleh kosong.` (kode keluar 1) | Ya: perbaiki argumen |
 | Gagal sistem | Berkas basis data tidak bisa ditulis | `Gagal menyimpan produk: <alasan>. Coba lagi; bila berulang, periksa izin tulis folder.` | Ya: coba lagi |
-| Tidak punya akses | SKU diketik saat peran bukan yang diizinkan mengubah master | `Gagal: hanya pemilik/kasir yang boleh menambah produk.` | Ya: minta pemilik |
+| Tidak punya akses | Tidak berlaku — sistem tidak memeriksa peran (lihat `03-architecture.md` bagian 7) | – | – |
 | Data besar | Tidak berlaku | – | – |
 
 **Aturan tampilan:**
@@ -294,12 +294,14 @@ python -m app
 
 ## 6. Peran & tampilan
 
-| Peran | Layar yang bisa diakses | Elemen yang disembunyikan | Aksi yang dilarang |
-|---|---|---|---|
-| Kasir | S-01, S-02, S-03, S-04, S-06 | – (semua perintah terlihat di `--help`) | `batal` (S-05) |
-| Pemilik | S-01…S-06 | – | – |
+| Peran | Layar yang biasa dipakai | Perintah yang bukan wewenangnya |
+|---|---|---|
+| Kasir | S-01, S-02, S-03, S-06 | `batal` (S-05) — wewenang Pemilik |
+| Pemilik | S-01…S-06 | – |
 
-Catatan penting: menyembunyikan elemen di UI **bukan** pengamanan. Penegakan hak akses tetap dilakukan di lapisan logika (lihat `03-architecture.md` bagian 7). Perintah `batal` menolak peran bukan pemilik walaupun perintahnya tetap muncul di bantuan.
+Catatan penting: **tidak ada pemeriksaan peran di dalam sistem.** Semua perintah terlihat di `--help` dan bisa dijalankan siapa pun yang memegang terminal. Pembatasan `batal` hanya untuk Pemilik adalah aturan organisasi, bukan kontrol teknis — alasannya di `03-architecture.md` bagian 7.
+
+Konsekuensi yang harus disadari: menambahkan argumen `--peran` tanpa autentikasi tidak akan menambah keamanan sama sekali, karena nilainya bisa diketik siapa pun. Kalau pembatasan ini perlu ditegakkan secara teknis, autentikasi harus dibuat lebih dulu (tercatat di Q-03).
 
 ---
 
@@ -327,7 +329,7 @@ Catatan: uang disimpan sebagai bilangan bulat rupiah penuh (tanpa sen), dan dita
 | Lihat daftar produk | rendah | tidak | – | Keluaran daftar |
 | Simpan transaksi (jual) | sedang | tidak (sistem menolak input salah) | ya, lewat `batal` (satu kali) | Rincian + kode transaksi + kembalian |
 | Tambah produk | sedang | tidak | Tidak dihapus; perlu koreksi manual oleh pemilik | Konfirmasi SKU + nama |
-| Batalkan transaksi | tinggi | ya — perintah `batal` memerlukan `--kode` + `--alasan`, dan hanya pemilik | tidak (status akhir) | Sebutkan kode, alasan, dan daftar stok yang dikembalikan |
+| Batalkan transaksi | tinggi | ya — perintah `batal` memerlukan `--kode` + `--alasan` dan maksimal sekali (BR-006); wewenang Pemilik | tidak (status akhir) | Sebutkan kode, alasan, dan daftar stok yang dikembalikan |
 | Menimpa/hapus data | – | Tidak ada perintah semacam ini | – | – |
 
 Catatan: pembatalan adalah satu-satunya tindakan berisiko tinggi. Karena itu ia membutuhkan kode transaksi eksplisit, alasan minimal 5 karakter, dan hanya boleh dijalankan pemilik.
