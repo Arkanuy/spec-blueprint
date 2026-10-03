@@ -1,4 +1,4 @@
-name: verifikasi
+name: verify
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  dokumen:
-    name: Uji dokumen template dan penyalinan
+  documents:
+    name: Verify template documents and copy script
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,136 +18,153 @@ jobs:
           python-version: "3.11"
 
       # ------------------------------------------------------------------ #
-      - name: Struktur wajib ada
+      - name: Required structure exists
         run: |
           set -e
           for f in README.md CONTRIBUTING.md LICENSE \
-                   scripts/new_project.py templates/ATURAN-AGEN.md \
-                   docs/README.md docs/00-masalah.md docs/01-kebutuhan.md \
-                   docs/02-desain.md docs/03-proses.md docs/04-data.md \
-                   docs/05-tampilan.md docs/06-uji.md docs/07-urutan-kerja.md \
-                   docs/08-risiko.md; do
-            test -f "$f" || { echo "HILANG: $f"; exit 1; }
+                   scripts/new_project.py AGENT-RULES.md \
+                   docs/README.md docs/00-problem.md docs/01-requirements.md \
+                   docs/02-design.md docs/03-process.md docs/04-data.md \
+                   docs/05-ui.md docs/06-testing.md docs/07-build-order.md \
+                   docs/08-risks.md; do
+            test -f "$f" || { echo "MISSING: $f"; exit 1; }
           done
-          echo "Semua berkas wajib ada."
+          echo "All required files present."
 
       # ------------------------------------------------------------------ #
-      - name: Syntax script
+      - name: Script syntax
         run: python -m py_compile scripts/new_project.py && echo "syntax ok"
 
       # ------------------------------------------------------------------ #
-      - name: Dokumen harus KOSONG — nol contoh terisi
+      - name: Documents must be EMPTY — no filled-in examples
         run: |
           set -e
-          # Tidak boleh ada sisa contoh terisi di dokumen yang disalin ke proyek pengguna.
-          for pola in 'EXAMPLE-START' 'Toko Berkah' 'kasir-berkah'; do
-            if grep -rn "$pola" docs/; then
-              echo "GAGAL: ditemukan '$pola' — dokumen harus kosong dan siap diisi"
+          # No leftovers from earlier versions.
+          for pattern in 'EXAMPLE-START' 'Toko Berkah' 'kasir-berkah'; do
+            if grep -rn "$pattern" docs/; then
+              echo "FAIL: found '$pattern' — documents must stay empty and ready to fill"
               exit 1
             fi
           done
-          # Tidak boleh ada baris tabel yang sudah terisi ID nyata (FR-001, US-001, dst).
+          # No table row may already carry a real ID (FR-001, US-001, ...).
           if grep -rnE '^\| *[A-Z]{2,3}-[0-9]{3}' docs/; then
-            echo "GAGAL: ada baris tabel yang sudah berisi ID contoh"
+            echo "FAIL: a table row already contains a sample ID"
             exit 1
           fi
-          echo "Dokumen kosong: tidak ada contoh terisi."
+          echo "Documents empty: no filled-in examples."
 
       # ------------------------------------------------------------------ #
-      - name: templates/ hanya berisi kontrak agen, bukan AGENTS.md
+      - name: Documents must be English, not Indonesian
         run: |
           set -e
-          if [ -f templates/AGENTS.md ]; then
-            echo "GAGAL: templates/AGENTS.md tidak boleh ada — agen akan membacanya sebagai"
-            echo "kontrak untuk repo kit ini sendiri. Pakai templates/ATURAN-AGEN.md."
+          if grep -rniE '\b(adalah|dengan|untuk|tidak|yang|harus|masalah|kebutuhan|risiko|catatan|pengguna|berkas|apakah|jumlah|kalau|sudah|belum)\b' docs/ AGENT-RULES.md; then
+            echo "FAIL: Indonesian text found — this repo ships in English"
             exit 1
           fi
-          jumlah=$(ls templates/ | wc -l)
-          [ "$jumlah" -eq 1 ] || { echo "GAGAL: templates/ harus berisi tepat 1 berkas"; exit 1; }
-          echo "templates/ berisi hanya kontrak agen."
+          echo "Documents are English."
 
       # ------------------------------------------------------------------ #
-      - name: Tidak boleh ada proyek contoh di repo
+      - name: Root must not contain AGENTS.md
         run: |
           set -e
-          if [ -d examples ]; then
-            echo "GAGAL: folder examples/ tidak boleh ada di repo ini"
-            exit 1
-          fi
-          if [ -d templates/code ]; then
-            echo "GAGAL: repo ini hanya berisi dokumen, tidak memuat kode"
-            exit 1
-          fi
-          echo "Repo hanya berisi dokumen."
+          for f in AGENTS.md templates/AGENTS.md docs/AGENTS.md; do
+            if [ -f "$f" ]; then
+              echo "FAIL: $f must not exist — agents would read it as the contract for this repo."
+              echo "Use AGENT-RULES.md at the repo root instead."
+              exit 1
+            fi
+          done
+          echo "No AGENTS.md inside the kit."
 
       # ------------------------------------------------------------------ #
-      - name: Setiap dokumen punya judul dan keterangan tujuan
+      - name: This repo ships documents only
+        run: |
+          set -e
+          for d in examples templates/code src app tests; do
+            if [ -d "$d" ]; then
+              echo "FAIL: $d must not exist — this repo contains documents only"
+              exit 1
+            fi
+          done
+          echo "Repo contains documents only."
+
+      # ------------------------------------------------------------------ #
+      - name: Every document has a title and a purpose line
         run: |
           set -e
           for f in docs/0*.md; do
-            head -1 "$f" | grep -q '^# ' || { echo "GAGAL: $f tidak diawali judul H1"; exit 1; }
-            grep -q '^> ' "$f" || { echo "GAGAL: $f tidak punya keterangan tujuan (blok >)"; exit 1; }
-            grep -q '^---$' "$f" || { echo "GAGAL: $f tidak punya garis pemisah"; exit 1; }
+            head -1 "$f" | grep -q '^# ' || { echo "FAIL: $f has no H1 title"; exit 1; }
+            grep -q '^> ' "$f" || { echo "FAIL: $f has no purpose line (blockquote)"; exit 1; }
+            grep -q '^---$' "$f" || { echo "FAIL: $f has no horizontal rule"; exit 1; }
           done
-          echo "Semua dokumen terstruktur."
+          echo "All documents structured."
 
       # ------------------------------------------------------------------ #
-      - name: Tidak ada placeholder {{...}}
+      - name: No {{...}} placeholders
         run: |
           set -e
-          if grep -rn '{{[A-Za-z_]*}}' docs/ templates/; then
-            echo "GAGAL: placeholder {{...}} tidak boleh ada, tulis label kosong langsung"
+          if grep -rn '{{[A-Za-z_]*}}' docs/ AGENT-RULES.md; then
+            echo "FAIL: no {{...}} placeholders allowed — write the empty label directly"
             exit 1
           fi
-          echo "Tidak ada placeholder."
+          echo "No placeholders."
 
       # ------------------------------------------------------------------ #
-      - name: Dry-run penyalinan
+      - name: Internal links point at files that exist
+        run: |
+          set -e
+          for name in $(grep -rhoE '\]\(0[0-9][a-z-]*\.md\)' docs/ | tr -d '](' | sed 's/)//' | sort -u); do
+            test -f "docs/$name" || { echo "FAIL: docs/$name is linked but does not exist"; exit 1; }
+          done
+          echo "All internal links resolve."
+
+      # ------------------------------------------------------------------ #
+      - name: Dry run
         run: |
           python scripts/new_project.py --dry-run --target ./out/dryrun | tail -5
 
       # ------------------------------------------------------------------ #
-      - name: Salin nyata lalu verifikasi hasilnya
+      - name: Real copy then verify the result
         run: |
           set -e
-          python scripts/new_project.py --target ./out/proyek-uji
+          python scripts/new_project.py --target ./out/project-a
 
-          echo "--- berkas hasil ---"
-          test -f ./out/proyek-uji/docs/00-masalah.md
-          test -f ./out/proyek-uji/docs/08-risiko.md
-          test -f ./out/proyek-uji/AGENTS.md
-          test -d ./out/proyek-uji/templates && { echo "GAGAL: templates/ tidak boleh ikut"; exit 1; }
+          echo "--- produced files ---"
+          test -f ./out/project-a/docs/00-problem.md
+          test -f ./out/project-a/docs/08-risks.md
+          test -f ./out/project-a/AGENTS.md
+          test -d ./out/project-a/scripts && { echo "FAIL: scripts/ must not be copied"; exit 1; }
 
-          jumlah=$(ls ./out/proyek-uji/docs/*.md | wc -l)
-          echo "jumlah dokumen tersalin: $jumlah"
-          [ "$jumlah" -eq 10 ] || { echo "GAGAL: harusnya 10 berkas (9 dokumen + README)"; exit 1; }
+          count=$(ls ./out/project-a/docs/*.md | wc -l)
+          echo "documents copied: $count"
+          [ "$count" -eq 10 ] || { echo "FAIL: expected 10 files (9 documents + README)"; exit 1; }
 
-          echo "--- hasil harus tetap kosong (siap diisi) ---"
-          if grep -rnE '^\| *[A-Z]{2,3}-[0-9]{3}' ./out/proyek-uji/docs; then
-            echo "GAGAL: hasil salinan berisi ID contoh"; exit 1
+          echo "--- the result must still be empty ---"
+          if grep -rnE '^\| *[A-Z]{2,3}-[0-9]{3}' ./out/project-a/docs; then
+            echo "FAIL: the copy contains sample IDs"; exit 1
           fi
-          echo "Hasil salinan bersih dan siap diisi."
+          echo "Copy is clean and ready to fill in."
 
       # ------------------------------------------------------------------ #
-      - name: Target tidak kosong harus ditolak
+      - name: Non-empty target must be rejected
         run: |
           set +e
-          python scripts/new_project.py --target ./out/proyek-uji
-          kode=$?
+          python scripts/new_project.py --target ./out/project-a
+          code=$?
           set -e
-          if [ "$kode" -eq 0 ]; then
-            echo "GAGAL: seharusnya menolak folder yang sudah berisi"; exit 1
+          if [ "$code" -eq 0 ]; then
+            echo "FAIL: a non-empty folder should have been rejected"; exit 1
           fi
-          echo "Benar: folder tidak kosong ditolak dengan kode $kode"
+          echo "Correct: non-empty folder rejected with code $code"
 
       # ------------------------------------------------------------------ #
-      - name: --target wajib
+      - name: --target is required
         run: |
           set +e
           python scripts/new_project.py
-          kode=$?
+          code=$?
           set -e
-          if [ "$kode" -eq 0 ]; then
-            echo "GAGAL: seharusnya menolak tanpa --target"; exit 1
+          if [ "$code" -eq 0 ]; then
+            echo "FAIL: running without --target should fail"; exit 1
           fi
-          echo "Benar: tanpa --target ditolak dengan kode $kode"
+          echo "Correct: missing --target rejected with code $code"

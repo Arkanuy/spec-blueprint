@@ -1,85 +1,85 @@
-# Kontribusi
+# Contributing
 
-Repo ini kumpulan dokumen kosong untuk diisi orang lain. Aturannya sederhana.
+This repo is a set of empty documents for other people to fill in. The rules are simple.
 
 ---
 
-## Peta folder
+## Folder map
 
-| Folder | Isi | Boleh berisi contoh? |
+| Folder | Contents | May it contain examples? |
 |---|---|---|
-| `docs/**` | Dokumen yang disalin ke proyek pengguna | **Tidak.** Harus kosong dan siap diisi |
-| `templates/ATURAN-AGEN.md` | Kontrak agen AI untuk proyek pengguna | Tidak |
-| `scripts/` | Alat, bukan dokumentasi | – |
-| Akar repo (`README.md`, `CONTRIBUTING.md`) | Dokumentasi repo ini | – |
+| `docs/**` | Documents copied into the user's project | **No.** Must stay empty and ready to fill |
+| `AGENT-RULES.md` | The agent contract for the user's project | No |
+| `scripts/` | Tooling, not documentation | – |
+| Repo root (`README.md`, `CONTRIBUTING.md`) | Documentation for this repo | – |
 
 ---
 
-## Aturan yang dipegang
+## Rules we hold to
 
-1. **Tidak ada contoh di dalam dokumen.** Kalau sebuah bagian sulit dipahami, perbaiki judul atau
-   pertanyaan penuntunnya — jangan tambahkan contoh. Contoh membuat orang menyalin, bukan berpikir.
-2. **Tidak ada kolom hiasan.** Setiap bagian harus mencegah satu jenis kesalahan nyata. Kalau kamu
-   tidak bisa menyebut kesalahan apa yang dicegahnya, hapus bagiannya.
-3. **Tidak ada placeholder `{{...}}`.** Tulis "Proyek:" saja, biar langsung diisi.
-4. **Bahasa Indonesia**, istilah teknis boleh tetap aslinya.
-5. **Hindari bahasa pemasaran.** Tidak ada "solusi inovatif", "canggih", "seamless", "di era digital".
-6. **Jumlah dokumen dijaga kecil.** Sembilan sudah batas atas. Menambah dokumen berarti setiap orang
-   harus mengisi satu berkas lagi sebelum mulai kerja — itu biaya nyata, bukan kelengkapan.
-
----
-
-## Keunikan nama berkas
-
-`templates/ATURAN-AGEN.md` sengaja **tidak** dinamai `AGENTS.md` di repo ini. Alasannya: berkas
-bernama `AGENTS.md` di akar atau di dalam repo akan otomatis dibaca sebagai *kontrak untuk repo ini
-sendiri* oleh sebagian besar agen AI. Itu membuat repo kit disalahartikan sebagai proyek aplikasi —
-persis masalah yang ingin dihindari. Script `new_project.py` yang mengubah namanya jadi `AGENTS.md`
-saat menyalin.
-
-Semua nama berkas `docs/` dan `templates/` **wajib huruf kecil** dengan pemisah tanda hubung
-(`00-masalah.md`, bukan `00_Masalah.md`). Alasannya sama seperti di atas: `README.md` dan `AGENTS.md`
-satu-satunya nama yang boleh huruf besar, karena itu konvensi yang sudah terbaca agen dan platform.
+1. **No examples inside the documents.** If a section is hard to understand, fix its heading or its
+   guiding question — do not add an example. Examples make people copy instead of think.
+2. **No decorative columns.** Every section must prevent one real kind of mistake. If you cannot name
+   the mistake it prevents, delete the section.
+3. **No `{{...}}` placeholders.** Just write `Project:` and let people fill it in.
+4. **English**, technical terms may stay as they are.
+5. **No marketing language.** No "innovative solution", "seamless", "cutting-edge", "in the digital era".
+6. **Keep the document count small.** Nine is already the upper bound. Adding a document means every
+   user fills in one more file before starting work — that is a real cost, not completeness.
 
 ---
 
-## Mengubah dokumen
+## File naming
 
-1. Fork, buat cabang: `git checkout -b perbaikan/nama-perubahan`
-2. Lakukan perubahan.
-3. Uji penyalinan:
+`AGENT-RULES.md` is deliberately **not** named `AGENTS.md` in this repo. A file with that name would
+be read by most AI agents as the contract for *this repo*, which makes the kit look like an
+application project — exactly the confusion this repo exists to avoid. `new_project.py` renames it to
+`AGENTS.md` when copying.
+
+All file names under `docs/` and the repo root **must be lowercase** with hyphen separators
+(`00-problem.md`, not `00_Problem.md`). `README.md` and `AGENTS.md` are the only exceptions, because
+those names are conventions that agents and platforms already recognize.
+
+---
+
+## Changing a document
+
+1. Fork, create a branch: `git checkout -b fix/short-description`
+2. Make the change.
+3. Verify the copy still works:
 
 ```bash
 python -m py_compile scripts/new_project.py
-python scripts/new_project.py --dry-run --target "$LOCALAPPDATA/Temp/sb-uji"
-python scripts/new_project.py --target "$LOCALAPPDATA/Temp/sb-uji-2" --force
-ls "$LOCALAPPDATA/Temp/sb-uji-2/docs"
+python scripts/new_project.py --dry-run --target ./out/dryrun
+python scripts/new_project.py --target ./out/project-a
+python scripts/new_project.py --target ./out/project-b --force
+ls ./out/project-b/docs
 ```
 
-4. Pastikan `docs/README.md` dan `README.md` ikut diperbarui kalau nama atau jumlah berkas berubah.
-5. Buka pull request: jelaskan **kesalahan apa yang dicegah** oleh perubahan ini.
+4. Update `docs/README.md` and `README.md` if a file name or the file count changed.
+5. Open a pull request: state **which mistake your change prevents**.
 
 ---
 
-## Yang tidak diterima
+## What we do not accept
 
-- Menambahkan contoh, contoh terisi, atau proyek percontohan
-- Menambahkan dokumen baru tanpa menghapus yang lain (kecuali sangat kuat alasannya)
-- Menambahkan kolom tanpa menjelaskan manfaatnya
-- Menghapus bagian "tidak termasuk ruang lingkup", "ide tunda", atau "pertanyaan terbuka" — tiga
-  bagian itu yang paling mencegah proyek melenceng
-- Saran teknologi sebagai default (microservices, AI, blockchain) tanpa kaitan ke kebutuhan
+- Adding examples, filled-in examples, or a sample project
+- Adding a new document without removing another (unless the reason is very strong)
+- Adding columns without explaining the benefit
+- Removing the "out of scope", "parking lot", or "open questions" sections — those three prevent
+  projects from drifting more than anything else
+- Default technology recommendations (microservices, AI, blockchain) with no link to a requirement
 
 ---
 
-## Melaporkan masalah
+## Reporting a problem
 
 ```
-Dokumen : [nama berkas]
-Bagian  : [judul bagian]
-Masalah : [misal: pertanyaannya ambigu / kolomnya tidak pernah dipakai / jawabannya tidak jelas]
-Usulan  : [kalau ada]
+Document : [file name]
+Section  : [section heading]
+Problem  : [e.g. the question is ambiguous / the column is never used / the answer is unclear]
+Proposal : [if you have one]
 ```
 
-Kalau ada kontradiksi antar dokumen (`01-kebutuhan.md` bertentangan dengan `02-desain.md`),
-itu temuan penting — laporkan.
+If two documents contradict each other (`01-requirements.md` against `02-design.md`), that is a
+serious finding — report it.
