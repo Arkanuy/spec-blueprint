@@ -1,0 +1,85 @@
+### Kasus gagal -- folder sementara: /tmp/kasir-gagal-W1cxX0
+### Tiap kasus harus keluar dengan exit code 1 + pesan jelas ke stderr.
+
+===== setup =====
+$ python -m app produk tambah --sku KOPI-01 --nama Kopi Sachet --harga 3500 --stok 10
+Produk ditambahkan: KOPI-01 - Kopi Sachet | harga Rp3.500 | stok 10
+[exit=0]
+
+$ python -m app produk tambah --sku ROTI-01 --nama Roti Tawar --harga 12000 --stok 5
+Produk ditambahkan: ROTI-01 - Roti Tawar | harga Rp12.000 | stok 5
+[exit=0]
+
+===== KASUS 1: bayar kurang (BR-004 / FR-005) =====
+Total 1 x ROTI-01 = 12000, dibayar 10000.
+$ python -m app jual --produk ROTI-01:1 --bayar 10000 --kasir Nadia
+[exit=1]
+
+===== KASUS 2: jual melebihi stok (BR-005 / FR-007) =====
+Stok ROTI-01 = 5, diminta 99.
+$ python -m app jual --produk ROTI-01:99 --bayar 2000000 --kasir Nadia
+[exit=1]
+
+===== setup transaksi sah untuk uji batal =====
+$ python -m app jual --produk KOPI-01:2 --bayar 10000 --kasir Nadia
+Transaksi tersimpan: TRX-20261003-001 (SELESAI)
+Kasir           : Nadia
+Waktu           : 2026-10-03 22:36:04
+Baris item:
+  - KOPI-01      Kopi Sachet          2 x Rp3.500 = Rp7.000
+Total           : Rp7.000
+Bayar           : Rp10.000
+Kembalian       : Rp3.000
+[exit=0]
+
+===== KASUS 3a: batal pertama (alasan >= 5 karakter) -- harus SUKSES =====
+$ python -m app batal --kode TRX-20261003-001 --alasan salah input
+Transaksi TRX-20261003-001 DIBATALKAN.
+Alasan          : salah input
+Dibatalkan pada : 2026-10-03 22:36:04
+Stok produk pada transaksi ini sudah dikembalikan.
+[exit=0]
+
+===== KASUS 3b: batal KEDUA kali (BR-006 / FR-012) =====
+$ python -m app batal --kode TRX-20261003-001 --alasan batal lagi
+[exit=1]
+
+===== KASUS 4: alasan < 5 karakter (BR-007 / FR-010) =====
+$ python -m app produk tambah --sku GULA-01 --nama Gula 1 kg --harga 15000 --stok 3
+Produk ditambahkan: GULA-01 - Gula 1 kg | harga Rp15.000 | stok 3
+[exit=0]
+
+$ python -m app jual --produk GULA-01:1 --bayar 20000 --kasir Nadia
+Transaksi tersimpan: TRX-20261003-002 (SELESAI)
+Kasir           : Nadia
+Waktu           : 2026-10-03 22:36:05
+Baris item:
+  - GULA-01      Gula 1 kg            1 x Rp15.000 = Rp15.000
+Total           : Rp15.000
+Bayar           : Rp20.000
+Kembalian       : Rp5.000
+[exit=0]
+
+$ python -m app batal --kode TRX-20261003-002 --alasan err
+[exit=1]
+
+===== KASUS 5 (bonus): qty 0 (BR-001) dan SKU ganda (BR-009) =====
+$ python -m app jual --produk KOPI-01:0 --bayar 10000 --kasir Nadia
+[exit=1]
+
+$ python -m app jual --produk KOPI-01:1 --produk KOPI-01:1 --bayar 10000 --kasir Nadia
+[exit=1]
+
+$ python -m app jual --produk KOPI-01:tiga --bayar 10000 --kasir Nadia
+[exit=2]
+
+===== Verifikasi stok tidak berubah karena kasus gagal (KOPI-01 harus tetap 10) =====
+$ python -m app produk daftar
+DAFTAR PRODUK (3 item)
+SKU          NAMA                        HARGA   STOK
+------------------------------------------------------
+GULA-01      Gula 1 kg                  15.000      2
+KOPI-01      Kopi Sachet                 3.500     10
+ROTI-01      Roti Tawar                 12.000      5
+[exit=0]
+

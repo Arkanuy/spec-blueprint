@@ -8,7 +8,7 @@ on:
 
 jobs:
   scaffold:
-    name: Uji scaffolding & kelengkapan dokumen
+    name: Uji scaffolding, contoh, dan skeleton kode
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,57 +17,104 @@ jobs:
         with:
           python-version: "3.11"
 
+      # ------------------------------------------------------------------ #
       - name: Struktur wajib ada
         run: |
           set -e
-          for f in README.md AGENTS.md SKILL.md LICENSE \
-                   docs/README.md docs/00-discovery.md docs/01-prd.md \
-                   docs/02-requirements.md docs/03-architecture.md \
-                   docs/04-workflow.md docs/05-data-model.md docs/06-ui-ux.md \
-                   docs/07-test-plan.md docs/08-roadmap.md docs/09-risks.md \
-                   docs/10-decisions.md \
-                   prompts/01-generate-docs.md prompts/02-implement-feature.md \
-                   prompts/03-code-review.md prompts/04-sync-docs.md \
-                   checklists/gate-1-sebelum-coding.md \
-                   checklists/gate-2-per-fitur-selesai.md \
-                   checklists/gate-3-sebelum-rilis.md \
-                   scripts/new_project.py; do
+          for f in README.md CONTRIBUTING.md LICENSE \
+                   scripts/new_project.py \
+                   templates/AGENTS.md templates/SKILL.md \
+                   templates/docs/README.md templates/docs/00-discovery.md \
+                   templates/docs/01-prd.md templates/docs/02-requirements.md \
+                   templates/docs/03-architecture.md templates/docs/04-workflow.md \
+                   templates/docs/05-data-model.md templates/docs/06-ui-ux.md \
+                   templates/docs/07-test-plan.md templates/docs/08-roadmap.md \
+                   templates/docs/09-risks.md templates/docs/10-decisions.md \
+                   templates/prompts/01-generate-docs.md \
+                   templates/prompts/02-implement-feature.md \
+                   templates/prompts/03-code-review.md \
+                   templates/prompts/04-sync-docs.md \
+                   templates/checklists/gate-1-sebelum-coding.md \
+                   templates/checklists/gate-2-per-fitur-selesai.md \
+                   templates/checklists/gate-3-sebelum-rilis.md \
+                   templates/code/app/__main__.py \
+                   templates/code/app/cli.py \
+                   templates/code/app/db.py \
+                   templates/code/app/layanan.py \
+                   examples/kasir-berkah/docs/00-discovery.md \
+                   examples/kasir-berkah/docs/01-prd.md \
+                   examples/kasir-berkah/docs/02-requirements.md \
+                   examples/kasir-berkah/docs/03-architecture.md \
+                   examples/kasir-berkah/docs/04-workflow.md \
+                   examples/kasir-berkah/docs/05-data-model.md \
+                   examples/kasir-berkah/docs/06-ui-ux.md \
+                   examples/kasir-berkah/docs/07-test-plan.md \
+                   examples/kasir-berkah/docs/08-roadmap.md \
+                   examples/kasir-berkah/docs/09-risks.md \
+                   examples/kasir-berkah/docs/10-decisions.md; do
             test -f "$f" || { echo "HILANG: $f"; exit 1; }
           done
           echo "Semua berkas wajib ada."
 
+      # ------------------------------------------------------------------ #
       - name: Syntax script Python
         run: python -m py_compile scripts/new_project.py && echo "syntax ok"
 
+      # ------------------------------------------------------------------ #
+      - name: Contoh harus terisi penuh (tanpa {{...}}, [isi], atau blok contoh)
+        run: |
+          set -e
+          if grep -rn '{{[A-Z_]*}}' examples/; then
+            echo "GAGAL: contoh masih berisi placeholder {{...}}"; exit 1
+          fi
+          if grep -rn '\[isi' examples/; then
+            echo "GAGAL: contoh masih berisi teks template [isi]"; exit 1
+          fi
+          if grep -rq 'EXAMPLE-START' examples/; then
+            echo "GAGAL: contoh masih berisi blok contoh"; exit 1
+          fi
+          echo "Contoh terisi penuh."
+
+      # ------------------------------------------------------------------ #
+      - name: Skeleton kode template harus lulus unit test
+        run: |
+          cd templates/code
+          python -m unittest discover -s tests -v
+
+      # ------------------------------------------------------------------ #
       - name: Dry-run scaffolding
         run: |
-          python scripts/new_project.py --dry-run \
-            --name "Uji CI" --type web --domain "uji" \
-            --stack "python" --owner "CI" | tail -5
+          python scripts/new_project.py --dry-run --name "Uji CI" --type cli \
+            --domain "uji" --stack "python" --owner "CI" --with-code \
+            --target ./out/dryrun | tail -5
 
-      - name: Generate proyek contoh lalu verifikasi
+      # ------------------------------------------------------------------ #
+      - name: Generate proyek contoh lalu verifikasi dokumennya
         run: |
           set -e
           python scripts/new_project.py \
-            --name "Uji CI" --target ./out/uji --type web \
+            --name "Uji CI" --target ./out/uji --type cli \
             --domain "uji otomatis" --stack "python" --owner "CI" \
-            --strip-examples --no-git --non-interactive
+            --strip-examples --with-code --no-git --non-interactive
 
           echo "--- berkas hasil ---"
           test -f ./out/uji/docs/01-prd.md
           test -f ./out/uji/AGENTS.md
           test -f ./out/uji/checklists/gate-1-sebelum-coding.md
+          test -f ./out/uji/app/cli.py
+          test -d ./out/uji/tests
+          if [ -d ./out/uji/code ]; then
+            echo "GAGAL: kode ditanam di code/ padahal harus di akar proyek"; exit 1
+          fi
 
           echo "--- placeholder {{...}} harus sudah tergantikan ---"
           if grep -rn '{{[A-Z_]*}}' ./out/uji/docs ./out/uji/AGENTS.md ./out/uji/checklists; then
-            echo "GAGAL: masih ada placeholder yang belum diganti"
-            exit 1
+            echo "GAGAL: masih ada placeholder yang belum diganti"; exit 1
           fi
 
           echo "--- blok contoh harus sudah dibuang ---"
           if grep -rq 'EXAMPLE-START' ./out/uji/docs; then
-            echo "GAGAL: blok contoh masih tersisa"
-            exit 1
+            echo "GAGAL: blok contoh masih tersisa"; exit 1
           fi
 
           echo "--- nilai proyek harus terisi ---"
@@ -75,6 +122,37 @@ jobs:
           grep -q "uji otomatis" ./out/uji/docs/00-discovery.md
           echo "Verifikasi selesai: scaffolding menghasilkan proyek yang benar."
 
+      # ------------------------------------------------------------------ #
+      - name: Proyek hasil generate harus bisa diuji dan dijalankan
+        run: |
+          set -e
+          cd out/uji
+          python -m unittest discover -s tests
+          export KASIR_DB="$(pwd)/uji.db"
+          python -m app produk tambah --sku A1 --nama "Kopi" --harga 3500 --stok 10
+          python -m app produk daftar
+          python -m app jual --produk A1:2 --bayar 10000 --kasir "CI"
+          python -m app rekap
+          echo "--- kasus gagal harus ditolak ---"
+          set +e
+          python -m app jual --produk A1:999 --bayar 100000 --kasir "CI"
+          kode=$?
+          set -e
+          if [ "$kode" -eq 0 ]; then
+            echo "GAGAL: penjualan melebihi stok seharusnya ditolak"; exit 1
+          fi
+          echo "Benar: melebihi stok ditolak dengan kode $kode"
+
+      # ------------------------------------------------------------------ #
+      - name: Contoh proyek harus bisa dijalankan
+        run: |
+          set -e
+          cd examples/kasir-berkah
+          python -m unittest discover -s tests
+          export KASIR_DB="$(pwd)/contoh.db"
+          python -m app produk daftar
+
+      # ------------------------------------------------------------------ #
       - name: Pastikan target yang tidak kosong ditolak
         run: |
           set +e
@@ -82,7 +160,6 @@ jobs:
           code=$?
           set -e
           if [ "$code" -eq 0 ]; then
-            echo "GAGAL: seharusnya menolak folder yang sudah berisi"
-            exit 1
+            echo "GAGAL: seharusnya menolak folder yang sudah berisi"; exit 1
           fi
           echo "Benar: folder tidak kosong ditolak dengan kode $code"

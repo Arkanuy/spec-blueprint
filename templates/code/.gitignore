@@ -1,0 +1,8 @@
+# Basis data SQLite lokal (NFR-001) -- jangan di-commit.
+kasir.db
+*.db
+*.db-journal
+
+# Cache Python -- jangan ikut tersimpan di template.
+__pycache__/
+*.py[cod]

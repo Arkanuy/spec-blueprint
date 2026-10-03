@@ -108,6 +108,20 @@ Untuk setiap entitas yang punya siklus hidup (pesanan, pengajuan, pembayaran, ti
 |---|---|---|---|---|---|
 | [status] | [status] | [aksi/event] | [syarat] | [peran] | [notifikasi/update data lain] |
 
+<!-- EXAMPLE-START -->
+Contoh terisi dari proyek "Kasir Berkah" (versi lengkap: `examples/kasir-berkah/docs/04-workflow.md`). Blok ini dibuang saat `--strip-examples`.
+
+Entitas: `sales` (transaksi penjualan)
+
+| Dari | Ke | Pemicu | Syarat | Peran yang boleh | Efek samping |
+|---|---|---|---|---|---|
+| DRAFT | SELESAI | Perintah `jual` disimpan | Semua baris valid (qty bulat > 0, tidak ada SKU ganda), stok cukup, bayar ≥ total | Kasir | Stok tiap produk turun; kode `TRX-YYYYMMDD-###` dibuat; masuk rekap |
+| SELESAI | DIBATALKAN | Perintah `batal` | Alasan ≥ 5 karakter; belum pernah dibatalkan | Pemilik | `alasan_batal` & `dibatalkan_pada` diisi; stok kembali; keluar dari rekap |
+| DIBATALKAN | – | Tidak ada | – | – | Status akhir; tidak boleh berubah lagi |
+
+Transisi terlarang: `DIBATALKAN → apa pun`, `SELESAI → SELESAI`, `DRAFT → DIBATALKAN`.
+<!-- EXAMPLE-END -->
+
 ```
 [Draft] ──submit──▶ [Menunggu] ──setuju──▶ [Disetujui]
                         │

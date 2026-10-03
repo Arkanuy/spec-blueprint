@@ -29,6 +29,36 @@ Indeks dokumen spec-first untuk proyek ini. Semua dokumen di folder ini adalah s
 
 ---
 
+## Bingung cara mengisi? Lihat contoh yang sudah terisi penuh
+
+Repo Spec Blueprint menyertakan satu proyek contoh yang dokumennya sudah diisi lengkap, lengkap
+dengan kode yang jalan dan bukti uji:
+
+```bash
+python scripts/new_project.py --list-examples
+```
+
+Baca `examples/kasir-berkah/docs/00-discovery.md` dan `.../10-decisions.md` lebih dulu — dua dokumen
+itu yang paling sering diisi asal, dan dua itu yang paling menentukan kualitas sisanya.
+
+---
+
+## Ukuran proyek: isi sesuai kebutuhan, jangan demi kelengkapan
+
+Struktur 11 dokumen ini dirancang untuk proyek yang akan dipakai orang lain. Mengisi semuanya
+setengah-setengah lebih buruk daripada mengisi sedikit tapi tuntas.
+
+| Skala proyek | Wajib diisi | Boleh menyusul, dengan catatan tanggal |
+|---|---|---|
+| Latihan / tugas kecil (1 orang, hitungan hari) | 00, 01, 02, 06, 07 | 03, 04, 05, 08, 09, 10 |
+| Proyek nyata (ada pengguna, ada data nyata) | 00, 01, 02, 03, 05, 06, 07, 09 | 04, 08, 10 |
+| Proyek produksi (banyak pengguna, ada uang) | semua, tanpa kecuali | — |
+
+Yang tidak boleh dikosongkan pada skala apa pun: **masalah & akar masalah** (00), **fitur beserta
+alasannya** (01), **requirement ber-ID** (02), dan **cara membuktikannya** (07).
+
+---
+
 ## Aturan penulisan dokumen ini
 
 1. **Satu dokumen, satu audiens.** PRD dibaca pemilik produk, architecture dibaca developer, test plan dibaca penguji.
