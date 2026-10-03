@@ -34,6 +34,10 @@ coverage/
 *.pem
 *.key
 
+# Basis data lokal dari contoh / uji coba
+*.db
+*.sqlite3
+
 # Output dari scripts/new_project.py saat uji coba
 /out/
 /tmp/

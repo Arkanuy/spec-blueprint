@@ -43,6 +43,20 @@
 | 1.1 | [F-01] | FR-001 | [hasil nyata] | [kondisi teruji] |
 | 1.2 | [F-02] | FR-002 | [hasil nyata] | [kondisi teruji] |
 
+<!-- EXAMPLE-START -->
+Contoh terisi dari proyek "Kasir Berkah" (versi lengkap: `examples/kasir-berkah/docs/08-roadmap.md`). Blok ini dibuang saat `--strip-examples`.
+
+### Fase 1 — Alur inti (MVP)
+
+| # | Fitur | FR terkait | Keluaran yang bisa dilihat | Kriteria selesai |
+|---|---|---|---|---|
+| 1.1 | F-01 Catat penjualan | FR-001, FR-002, FR-003 | `produk tambah`/`produk daftar`/`jual` menghasilkan transaksi bernomor `TRX-YYYYMMDD-###` | TC-001, TC-002, TC-003 lulus |
+| 1.2 | F-02 Hitung total & kembalian | FR-004, FR-005 | Keluaran `jual` menampilkan total dan kembalian | TC-004, TC-005 lulus |
+| 1.3 | F-03 Stok berkurang otomatis | FR-006, FR-007 | Stok di `produk daftar` turun setelah jual | TC-006, TC-007 lulus |
+
+Aturan urutan: F-01 selesai sebelum F-02 (total butuh baris item), dan F-02 selesai sebelum F-03 (stok hanya berkurang saat transaksi valid tersimpan). F-04 dan F-05 masuk Fase 2.
+<!-- EXAMPLE-END -->
+
 **Kriteria selesai fase:** alur utama selesai tanpa pekerjaan manual di luar sistem; semua TC P0 lulus.
 
 ### Fase 2 — Melengkapi

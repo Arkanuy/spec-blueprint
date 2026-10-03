@@ -1,0 +1,74 @@
+test_NFR001_data_tetap_ada_setelah_koneksi_ditutup (test_cli.UjiKontrakCLI.test_NFR001_data_tetap_ada_setelah_koneksi_ditutup)
+NFR-001: data tersimpan di SQLite lokal dan masih ada setelah koneksi ditutup. ... ok
+test_batal_kesalahan_aturan_keluar_satu (test_cli.UjiKontrakCLI.test_batal_kesalahan_aturan_keluar_satu)
+Batal dengan alasan pendek lewat CLI -> keluar 1 dengan pesan jelas. ... ok
+test_jual_sukses_keluar_nol (test_cli.UjiKontrakCLI.test_jual_sukses_keluar_nol) ... ok
+test_kesalahan_aturan_keluar_satu_dan_pesan_ke_stderr (test_cli.UjiKontrakCLI.test_kesalahan_aturan_keluar_satu_dan_pesan_ke_stderr)
+Kode keluar 1 untuk pelanggaran aturan bisnis; pesan masuk stderr. ... ok
+test_produk_tambah_dan_daftar_bentuk_kontrak (test_cli.UjiKontrakCLI.test_produk_tambah_dan_daftar_bentuk_kontrak)
+Kontrak CLI: 'produk tambah' dan 'produk daftar' jalan dan keluar 0. ... ok
+test_produk_tambah_dan_daftar_bentuk_ringkas (test_cli.UjiKontrakCLI.test_produk_tambah_dan_daftar_bentuk_ringkas)
+Bentuk ringkas tanpa spasi ('produk-tambah' / 'produk-daftar') setara. ... ok
+test_salah_pemakaian_keluar_dua (test_cli.UjiKontrakCLI.test_salah_pemakaian_keluar_dua)
+Kode keluar 2 untuk perintah kurang argumen atau format SKU:QTY salah. ... ok
+test_pesan_bayar_kurang_menyebut_total_dan_bayar (test_cli.UjiPesanHasil.test_pesan_bayar_kurang_menyebut_total_dan_bayar) ... ok
+test_BR007_alasan_kurang_dari_5_karakter_ditolak (test_pembatalan.UjiPembatalan.test_BR007_alasan_kurang_dari_5_karakter_ditolak)
+BR-007: alasan minimal 5 karakter. ... ok
+test_BR007_alasan_spasi_saja_dianggap_kosong (test_pembatalan.UjiPembatalan.test_BR007_alasan_spasi_saja_dianggap_kosong)
+BR-007: alasan yang hanya berisi spasi tetap terlalu pendek setelah dipangkas. ... ok
+test_FR010_batal_selesai_dengan_alasan_minimal_5_karakter (test_pembatalan.UjiPembatalan.test_FR010_batal_selesai_dengan_alasan_minimal_5_karakter)
+FR-010: transaksi SELESAI dibatalkan bila alasan >= 5 karakter. ... ok
+test_FR011_stok_dikembalikan_saat_transaksi_dibatalkan (test_pembatalan.UjiPembatalan.test_FR011_stok_dikembalikan_saat_transaksi_dibatalkan)
+FR-011 / BR-008: stok kembali sebesar qty yang dibatalkan. ... ok
+test_FR012_pembatalan_kedua_ditolak (test_pembatalan.UjiPembatalan.test_FR012_pembatalan_kedua_ditolak)
+FR-012 / BR-006: transaksi SELESAI hanya boleh dibatalkan satu kali. ... ok
+test_kode_transaksi_tidak_ada_ditolak (test_pembatalan.UjiPembatalan.test_kode_transaksi_tidak_ada_ditolak)
+Kode transaksi yang tidak ada memberi pesan yang menyebut kode itu. ... ok
+test_state_machine_transisi_terlarang_ditolak (test_pembatalan.UjiPembatalan.test_state_machine_transisi_terlarang_ditolak)
+State machine: DIBATALKAN -> apa pun terlarang; DRAFT tidak bisa dibatalkan. ... ok
+test_BR001_qty_harus_bulat_lebih_besar_dari_nol (test_penjualan.UjiCatatPenjualan.test_BR001_qty_harus_bulat_lebih_besar_dari_nol)
+BR-001: qty harus bilangan bulat > 0. ... ok
+test_BR002_harga_satuan_disalin_dari_master_saat_transaksi (test_penjualan.UjiCatatPenjualan.test_BR002_harga_satuan_disalin_dari_master_saat_transaksi)
+BR-002: harga diambil dari master, bukan diketik kasir; disalin ke sale_items. ... ok
+test_BR003_total_sama_dengan_jumlah_subtotal (test_penjualan.UjiCatatPenjualan.test_BR003_total_sama_dengan_jumlah_subtotal)
+BR-003: total transaksi = jumlah seluruh subtotal baris. ... ok
+test_BR004_bayar_kurang_ditolak (test_penjualan.UjiCatatPenjualan.test_BR004_bayar_kurang_ditolak)
+BR-004: bayar < total harus ditolak dengan pesan yang menyebut kekurangan. ... ok
+test_BR009_sku_sama_dua_kali_dalam_satu_transaksi_ditolak (test_penjualan.UjiCatatPenjualan.test_BR009_sku_sama_dua_kali_dalam_satu_transaksi_ditolak)
+BR-009: tidak boleh dua baris dengan SKU sama. ... ok
+test_FR002_satu_transaksi_bisa_beberapa_baris_item (test_penjualan.UjiCatatPenjualan.test_FR002_satu_transaksi_bisa_beberapa_baris_item)
+FR-002: satu transaksi penjualan dengan beberapa baris item sekaligus. ... ok
+test_FR003_nomor_transaksi_unik_berurutan_per_hari (test_penjualan.UjiCatatPenjualan.test_FR003_nomor_transaksi_unik_berurutan_per_hari)
+FR-003: nomor TRX-YYYYMMDD-### urut per hari dan unik. ... ok
+test_FR003_transaksi_gagal_tidak_membocorkan_nomor (test_penjualan.UjiCatatPenjualan.test_FR003_transaksi_gagal_tidak_membocorkan_nomor)
+Transaksi yang ditolak tidak boleh menyimpan baris transaksi gagal. ... ok
+test_FR004_total_dihitung_dari_seluruh_baris (test_penjualan.UjiCatatPenjualan.test_FR004_total_dihitung_dari_seluruh_baris)
+FR-004 / BR-003: total = jumlah (qty x harga satuan) seluruh baris. ... ok
+test_FR005_kembalian_dihitung_dari_bayar_dikurangi_total (test_penjualan.UjiCatatPenjualan.test_FR005_kembalian_dihitung_dari_bayar_dikurangi_total)
+FR-005 / BR-004: kembalian = bayar - total. ... ok
+test_FR006_stok_berkurang_tepat_sebesar_qty (test_penjualan.UjiCatatPenjualan.test_FR006_stok_berkurang_tepat_sebesar_qty)
+FR-006: stok berkurang sebesar qty saat transaksi disimpan. ... ok
+test_FR007_qty_melebihi_stok_ditolak (test_penjualan.UjiCatatPenjualan.test_FR007_qty_melebihi_stok_ditolak)
+FR-007 / BR-005: qty melebihi stok tersedia harus ditolak. ... ok
+test_BR010_sku_duplikat_ditolak (test_penjualan.UjiProduk.test_BR010_sku_duplikat_ditolak)
+BR-010: SKU harus unik. ... ok
+test_BR010_sku_tidak_bisa_diubah_setelah_dipakai_transaksi (test_penjualan.UjiProduk.test_BR010_sku_tidak_bisa_diubah_setelah_dipakai_transaksi)
+BR-010: perubahan SKU setelah dipakai di transaksi harus dicegah oleh skema/aturan bisnis. ... ok
+test_FR001_daftar_produk_memuat_sku_nama_harga_stok (test_penjualan.UjiProduk.test_FR001_daftar_produk_memuat_sku_nama_harga_stok)
+FR-001: daftar produk berisi SKU, nama, harga, dan stok. ... ok
+test_FR008_rekap_menampilkan_jumlah_total_dan_item (test_rekap.UjiRekap.test_FR008_rekap_menampilkan_jumlah_total_dan_item)
+FR-008: rekap harian berisi jumlah transaksi, total penjualan, total item terjual. ... ok
+test_FR009_rekap_hanya_menghitung_transaksi_selesai (test_rekap.UjiRekap.test_FR009_rekap_hanya_menghitung_transaksi_selesai)
+FR-009: transaksi DIBATALKAN tidak masuk rekap. ... ok
+test_FR009_rekap_hari_kosong_bernilai_nol (test_rekap.UjiRekap.test_FR009_rekap_hari_kosong_bernilai_nol)
+Rekap hari tanpa transaksi SELESAI mengembalikan nol, bukan error. ... ok
+test_FR009_rekap_hari_lain_tidak_tercampur (test_rekap.UjiRekap.test_FR009_rekap_hari_lain_tidak_tercampur)
+Rekap per tanggal hanya menghitung transaksi pada tanggal itu. ... ok
+test_NFR003_tanggal_salah_format_pesan_jelas (test_rekap.UjiRekap.test_NFR003_tanggal_salah_format_pesan_jelas)
+NFR-003: tanggal salah format menghasilkan pesan Indonesia yang menjelaskan tindakan. ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 1.306s
+
+OK
+EXIT=0

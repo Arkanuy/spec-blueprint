@@ -151,6 +151,21 @@ Isi bagian ini dengan pelajaran nyata dari proyek. Contoh isian:
 | [contoh: migrasi DB lupa dijalankan sebelum deploy] | [jalankan `npx prisma migrate deploy` lebih dulu] |
 | [contoh: `.env` menimpa nilai default kode] | [periksa variabel lingkungan sebelum menebak penyebab bug] |
 
+<!-- EXAMPLE-START -->
+Contoh terisi dari proyek "Kasir Berkah" (CLI Python + SQLite). Blok ini dibuang saat `--strip-examples`. Ganti dengan pelajaran nyata dari proyek ini setelah ada temuan.
+
+| Jebakan | Cara menghindari |
+|---|---|
+| Data nyata ikut terpakai saat menjalankan uji | Uji wajib menunjuk basis data sementara lewat env `KASIR_DB`; jangan pernah menjalankan uji ke `kasir.db` toko |
+| Stok berkurang padahal transaksi gagal disimpan | Bungkus penulisan `sales` + `sale_items` + perubahan `products.stok` dalam satu transaksi SQLite; jangan commit sebagian |
+| Transaksi lama ikut berubah saat harga master diedit | Salin `products.harga` ke `sale_items.harga_satuan` saat transaksi dibuat (BR-002), jangan membaca ulang harga master |
+| Nomor transaksi bentrok saat dua proses menulis bersamaan | Jaga `UNIQUE(kode)` di database dan generate ulang bila bentrok; jangan hanya mengandalkan hitung-max di aplikasi |
+| Pesan error teknis bocor ke kasir (traceback Python) | Tangkap kesalahan aturan bisnis dan cetak pesan Bahasa Indonesia ke stderr; traceback hanya untuk kegagalan tak terduga |
+| Batal dijalankan dua kali lalu stok bertambah dobel | Periksa `status` masih SELESAI di dalam transaksi yang sama dengan perubahan status; tolak DIBATALKAN |
+| Qty `"1.5"` atau `"-2"` lolos karena parsing longgar | Validasi `int` + rentang di lapisan logika (BR-001), bukan hanya di argparse |
+| Format tanggal beda (`03-10-2026`) diterima diam-diam | Parse dengan format tetap `YYYY-MM-DD` dan tolak yang lain dengan contoh format yang benar |
+<!-- EXAMPLE-END -->
+
 Kalau agen menemukan jebakan baru, tulis di sini dan lanjutkan. Jangan biarkan orang berikutnya menemukan hal yang sama.
 
 ---

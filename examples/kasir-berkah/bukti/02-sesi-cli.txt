@@ -1,0 +1,86 @@
+### Salinan sesi CLI nyata dari folder sementara: /tmp/kasir-sesi-niKkQx
+### Basis data sementara: $TMP/kasir-sesi.db (KASIR_DB)
+
+===== 1. produk tambah =====
+$ python -m app produk tambah --sku KOPI-01 --nama Kopi Sachet --harga 3500 --stok 40
+Produk ditambahkan: KOPI-01 - Kopi Sachet | harga Rp3.500 | stok 40
+[exit=0]
+
+$ python -m app produk tambah --sku ROTI-01 --nama Roti Tawar --harga 12000 --stok 5
+Produk ditambahkan: ROTI-01 - Roti Tawar | harga Rp12.000 | stok 5
+[exit=0]
+
+$ python -m app produk tambah --sku GULA-01 --nama Gula 1 kg --harga 15000 --stok 10
+Produk ditambahkan: GULA-01 - Gula 1 kg | harga Rp15.000 | stok 10
+[exit=0]
+
+===== 2. produk daftar =====
+$ python -m app produk daftar
+DAFTAR PRODUK (3 item)
+SKU          NAMA                        HARGA   STOK
+------------------------------------------------------
+GULA-01      Gula 1 kg                  15.000     10
+KOPI-01      Kopi Sachet                 3.500     40
+ROTI-01      Roti Tawar                 12.000      5
+[exit=0]
+
+===== 3. jual (2 baris item) =====
+$ python -m app jual --produk KOPI-01:2 --produk ROTI-01:1 --bayar 50000 --kasir Nadia
+Transaksi tersimpan: TRX-20261003-001 (SELESAI)
+Kasir           : Nadia
+Waktu           : 2026-10-03 22:35:53
+Baris item:
+  - KOPI-01      Kopi Sachet          2 x Rp3.500 = Rp7.000
+  - ROTI-01      Roti Tawar           1 x Rp12.000 = Rp12.000
+Total           : Rp19.000
+Bayar           : Rp50.000
+Kembalian       : Rp31.000
+[exit=0]
+
+===== 3b. produk daftar (stok turun) =====
+$ python -m app produk daftar
+DAFTAR PRODUK (3 item)
+SKU          NAMA                        HARGA   STOK
+------------------------------------------------------
+GULA-01      Gula 1 kg                  15.000     10
+KOPI-01      Kopi Sachet                 3.500     38
+ROTI-01      Roti Tawar                 12.000      4
+[exit=0]
+
+===== 4. rekap SEBELUM batal =====
+$ python -m app rekap --tanggal 2026-10-03
+REKAP HARIAN 2026-10-03
+Jumlah transaksi    : 1
+Total penjualan     : Rp19.000
+Total item terjual  : 3
+Transaksi (status SELESAI):
+  - TRX-20261003-001 | Rp19.000 | kembalian Rp31.000 | kasir Nadia
+[exit=0]
+
+===== 5. batal =====
+$ python -m app batal --kode TRX-20261003-001 --alasan salah input
+Transaksi TRX-20261003-001 DIBATALKAN.
+Alasan          : salah input
+Dibatalkan pada : 2026-10-03 22:35:54
+Stok produk pada transaksi ini sudah dikembalikan.
+[exit=0]
+
+===== 6. rekap SESUDAH batal =====
+$ python -m app rekap --tanggal 2026-10-03
+REKAP HARIAN 2026-10-03
+Jumlah transaksi    : 0
+Total penjualan     : Rp0
+Total item terjual  : 0
+(tidak ada transaksi berstatus SELESAI pada tanggal ini)
+[exit=0]
+
+===== 6b. produk daftar (stok kembali) =====
+$ python -m app produk daftar
+DAFTAR PRODUK (3 item)
+SKU          NAMA                        HARGA   STOK
+------------------------------------------------------
+GULA-01      Gula 1 kg                  15.000     10
+KOPI-01      Kopi Sachet                 3.500     40
+ROTI-01      Roti Tawar                 12.000      5
+[exit=0]
+

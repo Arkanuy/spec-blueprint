@@ -45,6 +45,46 @@ Untuk setiap entitas, isi blok berikut. Ulangi sesuai jumlah entitas.
 | id | UUID/int | Ya | Ya | auto | – | Kunci utama |
 | [field] | [tipe] | Ya/Tidak | Ya/Tidak | [nilai] | [aturan] | [fungsi bisnis field ini] |
 
+<!-- EXAMPLE-START -->
+Contoh satu entitas terisi penuh dari proyek "Kasir Berkah" (versi lengkap: `examples/kasir-berkah/docs/05-data-model.md`). Blok ini dibuang saat `--strip-examples`.
+
+### Entitas: sale_items
+
+**Tujuan bisnis:** Menyimpan rincian barang yang terjual, beserta harga saat itu, untuk menghitung total dan jumlah item terjual secara konsisten.
+**Dibuat oleh:** Sistem saat perintah `jual` disimpan.
+**Diubah oleh:** Tidak diubah setelah transaksi tersimpan.
+**Dihapus/diarsipkan:** Tidak dihapus selama `sales.status` bukan DRAFT.
+
+| Field | Tipe | Wajib | Unik | Default | Aturan validasi | Keterangan |
+|---|---|---|---|---|---|---|
+| id | INTEGER | Ya | Ya | auto | – | Kunci utama |
+| sale_id | INTEGER | Ya | Tidak | – | Harus merujuk `sales.id` yang ada | Transaksi induk |
+| product_id | INTEGER | Ya | Tidak | – | Harus merujuk `products.id` yang ada | Produk yang dijual |
+| qty | INTEGER | Ya | Tidak | – | Bilangan bulat > 0 (BR-001) | Jumlah terjual |
+| harga_satuan | INTEGER | Ya | Tidak | – | Disalin dari `products.harga` saat transaksi dibuat (BR-002) | Riwayat harga terkunci |
+| subtotal | INTEGER | Ya | Tidak | – | = qty × harga_satuan (BR-003) | Nilai baris |
+
+**Aturan pada entitas ini:**
+
+- BR-001: qty bilangan bulat > 0.
+- BR-002: harga_satuan disalin dari master, bukan diketik kasir.
+- BR-009: satu transaksi tidak boleh punya dua baris dengan `product_id` yang sama.
+
+**Indeks yang dibutuhkan:**
+
+| Field | Alasan (query yang sering) |
+|---|---|
+| sale_id | Mengambil seluruh baris milik satu transaksi (rekap & pembatalan) |
+| product_id | Mengembalikan stok saat pembatalan |
+
+**Relasi:**
+
+| Ke entitas | Jenis | Aturan | Kalau induk dihapus |
+|---|---|---|---|
+| sales | N-1 | Setiap baris milik tepat satu transaksi | CASCADE |
+| products | N-1 | Setiap baris merujuk satu produk | RESTRICT |
+<!-- EXAMPLE-END -->
+
 **Aturan pada entitas ini:**
 
 - BR-xxx: [aturan]

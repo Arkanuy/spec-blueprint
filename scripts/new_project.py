@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
-"""Buat kerangka dokumen spec-first untuk proyek baru dari template Spec Blueprint.
+"""Buat kerangka proyek baru dari template Spec Blueprint.
+
+Menghasilkan dokumen spec-first (docs/ + AGENTS.md + prompts/ + checklists/),
+dan opsional skeleton kode yang bisa dijalankan.
 
 Contoh:
     python scripts/new_project.py
     python scripts/new_project.py --name "Sistem Kasir" --target ~/projects/kasir \
-        --type web --domain "retail" --stack "Next.js, Prisma, PostgreSQL" \
-        --owner "Toko Berkah" --strip-examples
+        --type cli --domain "retail / toko kelontong" \
+        --stack "Python 3.10+ (stdlib), SQLite" \
+        --owner "Toko Berkah" --strip-examples --with-code
 """
 
 from __future__ import annotations
@@ -19,9 +23,15 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+TEMPLATE_DIR = REPO_ROOT / "templates"
+EXAMPLE_DIR = REPO_ROOT / "examples"
 
-# Folder / file yang disalin ke proyek baru.
+# Isi template yang disalin ke proyek baru. Ambil dari templates/, bukan dari akar repo,
+# supaya akar repo dipakai untuk dokumentasi repo ini sendiri.
 COPY_ITEMS = ["docs", "prompts", "checklists", "AGENTS.md", "SKILL.md"]
+
+# Skeleton kode yang bisa dijalankan (dipakai lewat --with-code).
+CODE_ITEM = "code"
 
 # Placeholder yang dikenali. Kunci tanpa kurung kurawal.
 PLACEHOLDER_KEYS = ["PROJECT_NAME", "PROJECT_TYPE", "DOMAIN", "STACK", "OWNER", "DATE"]
@@ -67,16 +77,24 @@ Prompt siap pakai untuk agen AI: [prompts/](prompts/).
 Pemeriksaan sebelum coding / per fitur / sebelum rilis: [checklists/](checklists/).
 
 Aturan untuk agen AI ada di [AGENTS.md](AGENTS.md) — wajib dibaca sebelum agen menulis kode.
-
-## Menjalankan
-
-```bash
-# isi dulu bagian ini setelah kode mulai dibuat
-```
-
+{code_section}
 ## Status
 
 Spec: {spec_status}
+"""
+
+PROJECT_CODE_SECTION = """
+## Menjalankan skeleton
+
+Skeleton kode ada di `app/`. Jalankan dari akar proyek:
+
+```bash
+python -m app --help
+python -m unittest discover -s tests -v
+```
+
+Skeleton ini hanya titik mulai: sesuaikan dengan FR di `docs/02-requirements.md`,
+jangan menambah fitur yang belum punya ID requirement.
 """
 
 
@@ -165,61 +183,110 @@ def resolve_target(args: argparse.Namespace) -> Path:
         return Path(normalize_target_path(args.target)).expanduser().resolve()
     slug = re.sub(r"[^a-z0-9]+", "-", args.name.lower()).strip("-") or "proyek-baru"
     cwd = Path.cwd()
-    if cwd.resolve() == REPO_ROOT and not args.in_place:
-        # Jangan menimpa repo template sendiri.
-        return (cwd.parent / slug).resolve()
-    return (cwd / slug).resolve() if not args.in_place else cwd.resolve()
+    if cwd.resolve() == REPO_ROOT:
+        if args.in_place:
+            # Menulis ke repo kit sendiri hampir selalu keliru: hasilnya mengotori template.
+            raise ScaffoldError(
+                "--in-place dijalankan dari dalam repo Spec Blueprint. Jalankan dari folder "
+                "proyekmu, atau pakai --target untuk menentukan folder tujuan.")
+        # Jangan menebak folder di luar repo (mis. langsung ke home). Minta ditentukan.
+        raise ScaffoldError(
+            "Skrip ini dijalankan dari dalam repo Spec Blueprint dan belum ada --target.\n"
+            "  Tentukan tujuan, contoh:\n"
+            f'    python scripts/new_project.py --name "{args.name}" --target ~/projects/{slug}')
+    return cwd.resolve() if args.in_place else (cwd / slug).resolve()
 
 
-def plan_files(target: Path, strip: bool) -> list[tuple[str, str]]:
+# Berkas di dalam templates/code yang TIDAK disalin (sudah diwakili bagian lain proyek hasil).
+CODE_SKIP = ["README.md"]
+
+
+def code_dest(target: Path, rel: Path) -> Path:
+    """Isi templates/code ditanam di akar proyek: app/, tests/, .gitignore — bukan di code/."""
+    return target / rel
+
+
+def template_sources(with_code: bool) -> list[tuple[str, Path]]:
+    """Pasangan (nama relatif di proyek baru, path sumber di template)."""
+    pairs: list[tuple[str, Path]] = []
+    for item in COPY_ITEMS:
+        src = TEMPLATE_DIR / item
+        if not src.exists():
+            raise ScaffoldError(
+                f"Template tidak lengkap: templates/{item} tidak ditemukan di {REPO_ROOT}")
+        pairs.append((item, src))
+    if with_code:
+        src = TEMPLATE_DIR / CODE_ITEM
+        if not src.is_dir():
+            raise ScaffoldError(
+                f"--with-code diminta, tapi templates/{CODE_ITEM}/ tidak ada.")
+        pairs.append((CODE_ITEM, src))
+    return pairs
+
+
+def _code_files(src: Path) -> list[Path]:
+    """Semua berkas yang akan ditanam dari templates/code, di luar yang dilewati."""
+    out: list[Path] = []
+    for p in sorted(src.rglob("*")):
+        if p.is_dir() or "__pycache__" in p.parts:
+            continue
+        rel = p.relative_to(src)
+        if rel.as_posix() in CODE_SKIP:
+            continue
+        out.append(p)
+    return out
+
+
+def plan_files(target: Path, with_code: bool) -> list[tuple[str, str]]:
     """Susun rencana tindakan: (jenis, keterangan)."""
     plan: list[tuple[str, str]] = []
 
-    for item in COPY_ITEMS:
-        src = REPO_ROOT / item
-        if not src.exists():
-            raise ScaffoldError(f"Template tidak lengkap: {item} tidak ditemukan di {REPO_ROOT}")
+    for item, src in template_sources(with_code):
+        if item == CODE_ITEM:
+            for f in _code_files(src):
+                rel = f.relative_to(src)
+                plan.append(("tanam", str(code_dest(target, rel)) + f"  (dari templates/code/{rel})"))
+            continue
         dest = target / item
         if src.is_dir():
             for p in sorted(src.rglob("*")):
-                if p.is_dir():
+                if p.is_dir() or "__pycache__" in p.parts:
                     continue
-                rel = p.relative_to(REPO_ROOT)
-                plan.append(("salin", str(dest / p.relative_to(src)) + f"  (dari {rel})"))
+                rel = p.relative_to(src)
+                plan.append(("salin", str(dest / rel) + f"  (dari templates/{item}/{rel})"))
         else:
-            plan.append(("salin", str(dest) + f"  (dari {item})"))
+            plan.append(("salin", str(dest) + f"  (dari templates/{item})"))
 
     plan.append(("tulis", str(target / "README.md")))
-    if not strip:
-        pass
+    plan.append(("gerak", f"{target.name}/.git  (git init, kecuali --no-git)"))
     return plan
 
 
-def copy_tree(src: Path, dst: Path) -> None:
-    dst.mkdir(parents=True, exist_ok=True)
-    for item in sorted(src.rglob("*")):
-        rel = item.relative_to(src)
-        out = dst / rel
-        if item.is_dir():
-            out.mkdir(parents=True, exist_ok=True)
-        else:
-            out.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(item, out)
-
-
-def process_files(target: Path, values: dict[str, str], strip: bool,
+def process_files(target: Path, values: dict[str, str], strip: bool, with_code: bool,
                   dry_run: bool) -> dict[str, int]:
-    """Salin, ganti placeholder, dan (opsional) buang blok contoh."""
-    stats = {"disalin": 0, "placeholder_diganti": 0, "blok_contoh_dibuang": 0}
+    """Salin, ganti placeholder, dan (opsional) buang blok contoh.
 
-    for item in COPY_ITEMS:
-        src = REPO_ROOT / item
+    Skeleton kode disalin apa adanya tanpa interpolasi: kalau ia berisi token {{...}}
+    berarti template kodenya salah, dan itu harus terlihat — bukan ditutupi.
+    """
+    stats = {"disalin": 0, "placeholder_diganti": 0, "blok_contoh_dibuang": 0, "kode_disalin": 0}
+
+    for item, src in template_sources(with_code):
+        if item == CODE_ITEM:
+            for f in _code_files(src):
+                rel = f.relative_to(src)
+                dest = code_dest(target, rel)
+                if not dry_run:
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(f, dest)
+                stats["kode_disalin"] += 1
+            continue
         if src.is_dir():
             for f in sorted(src.rglob("*")):
-                if f.is_dir():
+                if f.is_dir() or "__pycache__" in f.parts:
                     continue
-                rel = f.relative_to(REPO_ROOT)
-                _write_one(f, target / rel, values, strip, dry_run, stats)
+                rel = f.relative_to(src)
+                _write_one(f, target / item / rel, values, strip, dry_run, stats)
         else:
             _write_one(src, target / item, values, strip, dry_run, stats)
 
@@ -249,8 +316,7 @@ def _write_one(src: Path, dest: Path, values: dict[str, str], strip: bool,
     stats["disalin"] += 1
 
 
-def write_readme(target: Path, args: argparse.Namespace, values: dict[str, str],
-                 dry_run: bool) -> None:
+def write_readme(target: Path, args: argparse.Namespace, with_code: bool, dry_run: bool) -> None:
     spec_status = "semua dokumen masih kosong — mulai dari docs/00-discovery.md"
     content = PROJECT_README.format(
         name=args.name,
@@ -259,6 +325,7 @@ def write_readme(target: Path, args: argparse.Namespace, values: dict[str, str],
         domain=args.domain,
         stack=args.stack,
         spec_status=spec_status,
+        code_section=PROJECT_CODE_SECTION if with_code else "",
     )
     if dry_run:
         return
@@ -290,10 +357,47 @@ def check_unreplaced(target: Path) -> list[str]:
     return leftovers
 
 
+def check_ui_noise(target: Path) -> tuple[list[str], int]:
+    """Cari sisa blok contoh di hasil, dan hitung bagian yang masih harus diisi pengguna.
+
+    `[isi]` BUKAN kesalahan: itu penanda bagian yang memang tugas pengguna mengisi.
+    Yang kesalahan adalah blok contoh yang gagal dibuang saat --strip-examples.
+    """
+    noise: list[str] = []
+    todo = 0
+    for f in sorted(target.rglob("*.md")):
+        try:
+            text = f.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if "EXAMPLE-START" in text:
+            noise.append(f"{f.relative_to(target)}: blok contoh tidak terbuang")
+        todo += text.count("[isi")
+    return noise, todo
+
+
+def list_examples() -> int:
+    """Tampilkan contoh proyek terisi penuh yang tersedia."""
+    if not EXAMPLE_DIR.is_dir():
+        print("Belum ada contoh terisi di examples/.")
+        return 0
+    names = sorted(p.name for p in EXAMPLE_DIR.iterdir() if p.is_dir())
+    if not names:
+        print("Belum ada contoh terisi di examples/.")
+        return 0
+    print("Contoh proyek terisi penuh (lihat dulu sebelum mengisi dokumen sendiri):")
+    for n in names:
+        docs = EXAMPLE_DIR / n / "docs"
+        jumlah = len(list(docs.glob("*.md"))) if docs.is_dir() else 0
+        print(f"  examples/{n}  ({jumlah} dokumen terisi)")
+    print("\nCoba jalankan contohnya, atau pakai sebagai acuan cara mengisi.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="new_project.py",
-        description="Buat kerangka dokumen spec-first untuk proyek baru.",
+        description="Buat kerangka proyek baru (dokumen spec-first, opsional skeleton kode).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--name", help="Nama proyek")
@@ -304,6 +408,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--owner", help="Pemilik produk / organisasi")
     p.add_argument("--strip-examples", action="store_true",
                    help="Buang semua blok contoh (<!-- EXAMPLE-START --> ... END)")
+    p.add_argument("--with-code", action="store_true",
+                   help="Sertakan skeleton kode dari templates/code (bisa dijalankan & diuji)")
     p.add_argument("--no-git", action="store_true", help="Jangan jalankan git init")
     p.add_argument("--in-place", action="store_true",
                    help="Tulis ke folder saat ini, bukan ke subfolder baru")
@@ -313,6 +419,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Tampilkan rencana tanpa menulis apa pun")
     p.add_argument("--non-interactive", action="store_true",
                    help="Jangan bertanya; nilai yang kosong diisi default")
+    p.add_argument("--list-examples", action="store_true",
+                   help="Tampilkan contoh proyek terisi, lalu keluar")
     return p
 
 
@@ -320,13 +428,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    if not REPO_ROOT.joinpath("docs").is_dir():
-        print("Gagal: folder docs/ tidak ditemukan. Jalankan skrip ini dari dalam repo "
+    if args.list_examples:
+        return list_examples()
+
+    if not (TEMPLATE_DIR / "docs").is_dir():
+        print("Gagal: templates/docs/ tidak ditemukan. Jalankan skrip ini dari dalam repo "
               "Spec Blueprint.", file=sys.stderr)
         return 2
 
     args = prompt_if_missing(args)
-    target = resolve_target(args)
+    try:
+        target = resolve_target(args)
+    except ScaffoldError as exc:
+        print(f"Gagal: {exc}", file=sys.stderr)
+        return 2
 
     if target == REPO_ROOT:
         print("Gagal: folder tujuan sama dengan repo template. Pakai --target atau --in-place "
@@ -353,19 +468,21 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Jenis   : {args.type}")
     print(f"Stack   : {args.stack}")
     print(f"Contoh  : {'dibuang' if args.strip_examples else 'dipertahankan'}")
+    print(f"Kode    : {'disertakan (--with-code)' if args.with_code else 'tidak (dokumen saja)'}")
     print()
 
     if args.dry_run:
         print("=== RENCANA (dry-run, tidak ada yang ditulis) ===")
-        for action, desc in plan_files(target, args.strip_examples):
+        plan = plan_files(target, args.with_code)
+        for action, desc in plan:
             print(f"  [{action}] {desc}")
-        print(f"\nTotal berkas: {len(plan_files(target, args.strip_examples))}")
+        print(f"\nTotal berkas: {len(plan)}")
         return 0
 
     try:
         target.mkdir(parents=True, exist_ok=True)
-        stats = process_files(target, values, args.strip_examples, dry_run=False)
-        write_readme(target, args, values, dry_run=False)
+        stats = process_files(target, values, args.strip_examples, args.with_code, dry_run=False)
+        write_readme(target, args, args.with_code, dry_run=False)
     except ScaffoldError as exc:
         print(f"Gagal: {exc}", file=sys.stderr)
         return 2
@@ -373,29 +490,39 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Gagal menulis berkas: {exc}", file=sys.stderr)
         return 1
 
-    print(f"Berkas disalin        : {stats['disalin']} (+1 README.md proyek)")
+    print(f"Berkas dokumen disalin : {stats['disalin']} (+1 README.md proyek)")
     print(f"Nilai placeholder diisi: {stats['placeholder_diganti']} kemunculan")
     if args.strip_examples:
-        print(f"Blok contoh dibuang   : {stats['blok_contoh_dibuang']}")
+        print(f"Blok contoh dibuang    : {stats['blok_contoh_dibuang']}")
+    if args.with_code:
+        print(f"Berkas kode disalin    : {stats['kode_disalin']}")
 
     if not args.no_git:
         print(git_init(target))
 
     leftovers = check_unreplaced(target)
+    noise, todo = check_ui_noise(target)
     print()
     if leftovers:
         print("PERINGATAN — placeholder masih tersisa:")
         for line in leftovers:
             print(f"  {line}")
     else:
-        print("Tidak ada placeholder tersisa. Semua dokumen siap diisi.")
+        print("Tidak ada placeholder tersisa.")
+    if noise:
+        print("PERINGATAN — blok contoh tidak terbuang:")
+        for line in noise:
+            print(f"  {line}")
+    print(f"Bagian yang masih harus kamu isi: {todo} penanda [isi] di {target.name}/docs/")
 
     print(f"""
 Selesai. Langkah berikutnya:
   cd "{target}"
-  1. Isi docs/00-discovery.md   (masalah, stakeholder, proses sekarang)
-  2. Isi docs/01-prd.md         (tujuan, fitur, scope)
-  3. Jalankan checklists/gate-1-sebelum-coding.md sebelum minta AI menulis kode
+  1. Baca contoh terisi: python "{(REPO_ROOT / 'scripts' / 'new_project.py').as_posix()}" --list-examples
+  2. Isi docs/00-discovery.md   (masalah, stakeholder, proses sekarang)
+  3. Isi docs/01-prd.md         (tujuan, fitur, scope)
+  4. Jalankan checklists/gate-1-sebelum-coding.md sebelum minta AI menulis kode
+  5. Jalankan prompts/02-implement-feature.md satu fitur per sesi
 """)
     return 0
 

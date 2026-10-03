@@ -20,6 +20,20 @@ Bedakan dengan jelas:
 |---|---|---|---|---|---|---|---|---|
 | R-01 | [risiko] | [teknis/operasional/organisasi/jadwal/data/keamanan] | Rendah/Sedang/Tinggi | Rendah/Sedang/Tinggi | [K×D] | [langkah nyata] | [nama] | Terbuka/Dipantau/Tertutup |
 
+<!-- EXAMPLE-START -->
+Contoh terisi dari proyek "Kasir Berkah" (versi lengkap: `examples/kasir-berkah/docs/09-risks.md`). Blok ini dibuang saat `--strip-examples`.
+
+Skor = Kemungkinan × Dampak (Rendah=1, Sedang=2, Tinggi=3). Risiko berskor ≥ 6 wajib punya rencana penanganan sebelum coding dimulai.
+
+| ID | Risiko | Kategori | Kemungkinan | Dampak | Skor | Cara mengurangi | Penanggung jawab | Status |
+|---|---|---|---|---|---|---|---|---|
+| R-01 | Kasir kembali memakai nota kertas karena sistem terasa lebih lambat/membingungkan | operasional | Sedang | Tinggi | 6 | Uji dengan 1 alur nyata hari pertama; pesan Bahasa Indonesia; ukur waktu per transaksi sebelum rilis | Pemilik | Terbuka |
+| R-03 | Data hilang karena `kasir.db` rusak/terhapus tanpa cadangan | data | Sedang | Tinggi | 6 | Pencadangan harian (salin berkas) sebelum tutup; uji pemulihan | Pemilik | Terbuka |
+| R-05 | Stok sistem tidak cocok dengan rak karena kelalaian di luar sistem | data | Tinggi | Sedang | 6 | Bandingkan lewat rekap harian; pembatalan mengembalikan stok; hitung fisik berkala | Pemilik | Terbuka |
+| R-04 | Penyalahgunaan pembatalan untuk menutupi selisih kas | keamanan | Rendah | Tinggi | 3 | Pembatalan hanya pemilik; alasan wajib; transaksi batal tetap terlihat di data | Pemilik | Terbuka |
+| R-08 | Kode tidak bisa dirawat karena tidak ada yang paham | teknis | Rendah | Sedang | 2 | Batasi 3 tabel & satu lapisan logika; dokumentasi + uji otomatis | Developer | Terbuka |
+<!-- EXAMPLE-END -->
+
 Skor = Kemungkinan × Dampak (Rendah=1, Sedang=2, Tinggi=3). Skor ≥6 wajib punya rencana penanganan sebelum coding dimulai.
 
 ### 1.1 Risiko yang paling sering muncul di proyek seperti ini

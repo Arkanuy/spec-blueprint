@@ -64,6 +64,36 @@ Ulangi blok berikut untuk setiap layar prioritas. Layar P0 wajib lengkap.
 |---|---|---|---|---|
 | [nama tombol] | tombol | [yang terjadi] | [syarat] | [kapan bisa diklik] |
 
+<!-- EXAMPLE-START -->
+Contoh terisi dari proyek "Kasir Berkah" (versi lengkap: `examples/kasir-berkah/docs/06-ui-ux.md`). Blok ini dibuang saat `--strip-examples`. Untuk proyek CLI, "layar" adalah satu perintah beserta keluarannya.
+
+### S-05 — Batal (`python -m app batal --kode TRX-... --alasan "..."`)
+
+**Tujuan:** Membatalkan transaksi salah input, mengembalikan stok, dan mengeluarkannya dari rekap.
+**Masuk dari:** terminal.  **Keluar ke:** perintah `rekap` (verifikasi total turun).
+
+**Elemen interaktif:**
+
+| Elemen | Jenis | Aksi | Validasi | Kondisi aktif/nonaktif |
+|---|---|---|---|---|
+| `--kode` | argumen | Menentukan transaksi | Wajib; harus ada; format `TRX-YYYYMMDD-###` | Hanya berlaku untuk transaksi SELESAI |
+| `--alasan` | argumen | Alasan pembatalan | Wajib; ≥ 5 karakter (BR-007) | – |
+
+**Status layar yang WAJIB ditangani:**
+
+| Status | Kapan terjadi | Yang ditampilkan | Ada aksi pemulihan? |
+|---|---|---|---|
+| Memuat | Saat mengubah status & stok | Tidak ada indikator khusus (operasi lokal < 1 detik) | – |
+| Kosong | Tidak berlaku | – | – |
+| Kosong karena filter | Kode transaksi tidak ditemukan | `Gagal: transaksi dengan kode '<kode>' tidak ditemukan.` | Ya: cek kode lewat rekap |
+| Berhasil | Transaksi SELESAI berhasil dibatalkan | Konfirmasi + daftar stok yang dikembalikan + `Status: DIBATALKAN` | – |
+| Gagal validasi | Alasan < 5 karakter | `Gagal: alasan pembatalan minimal 5 karakter.` (kode keluar 1) | Ya: tulis alasan lebih panjang |
+| Gagal validasi | Transaksi sudah DIBATALKAN | `Gagal: transaksi <kode> sudah dibatalkan. Pembatalan hanya boleh sekali.` (kode keluar 1) | Tidak ada (memang dilarang) |
+| Gagal sistem | Perubahan status gagal disimpan | `Gagal membatalkan transaksi: <alasan>. Status dan stok tidak berubah.` | Ya: coba lagi |
+| Tidak punya akses | Peran bukan pemilik | `Gagal: pembatalan hanya boleh dilakukan pemilik.` (kode keluar 1) | Ya: minta pemilik |
+| Data besar | Transaksi dengan banyak baris | Semua baris stok yang dikembalikan dicetak | – |
+<!-- EXAMPLE-END -->
+
 **Status layar yang WAJIB ditangani:**
 
 | Status | Kapan terjadi | Yang ditampilkan | Ada aksi pemulihan? |
