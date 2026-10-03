@@ -1,190 +1,122 @@
 # Spec Blueprint
 
-**Tulis kontraknya dulu, baru minta AI menulis kode.**
+Repo isinya **dokumen kosong untuk diisi** saat kamu memulai proyek baru. Sembilan berkas `.md`
+di folder `docs/`, satu kontrak untuk agen AI, dan satu script untuk menyalinnya.
 
-Repo ini adalah *generator proyek baru*: kamu isi identitas proyek, keluar folder berisi 11 dokumen
-spec-first + kontrak agen + prompt + checklist — dan opsional skeleton kode yang bisa langsung
-dijalankan dan diuji.
-
-Tanpa spec, AI akan menebak. Dan tebakan AI selalu terlihat masuk akal — sampai scope meledak,
-UI tidak sesuai proses bisnis, dan tidak ada yang tahu fitur mana yang benar-benar dibutuhkan.
+Bukan aplikasi. Bukan contoh proyek. Isinya kosong dan memang untuk kamu isi.
 
 ---
 
-## Masalah yang diselesaikan
+## Kenapa perlu
 
-| Gejala saat vibecoding tanpa dokumen | Akar masalah |
+Kalau kamu minta AI menulis kode tanpa dokumen, AI akan menebak. Tebakan AI selalu terlihat masuk
+akal — sampai ruang lingkupnya meledak, tampilannya tidak sesuai proses kerja, dan tidak ada yang
+tahu fitur mana yang benar-benar dibutuhkan.
+
+| Gejala | Akar masalah |
 |---|---|
-| Fitur makin banyak, tapi produk makin tidak jelas arahnya | Tidak ada definisi masalah & tujuan bisnis tertulis |
-| AI bikin hal yang tidak diminta, atau lupa hal penting | Tidak ada requirement yang bisa dilacak |
-| Kode tidak konsisten antar sesi | Tidak ada batas arsitektur & konvensi |
-| Scope melebar tanpa disadari | Tidak ada daftar in/out of scope |
-| Sulit review hasil AI | Tidak ada kriteria selesai (definition of done) |
-| Perubahan keputusan hilang jejaknya | Tidak ada catatan keputusan (ADR) |
+| Fitur makin banyak, arah produk makin kabur | Masalah & tujuannya tidak tertulis |
+| AI membuat hal yang tidak diminta, atau lupa yang penting | Tidak ada kebutuhan yang bisa dilacak |
+| Kode tidak konsisten antar sesi | Tidak ada batas desain & konvensi |
+| Ruang lingkup melebar tanpa disadari | Tidak ada daftar "termasuk / tidak termasuk" |
+| Sulit menilai hasil AI | Tidak ada definisi selesai |
+| Keputusan hilang jejaknya | Tidak ada catatan keputusan |
+
+---
+
+## Isinya
+
+```
+docs/
+├── README.md              # urutan pengisian + format ID
+├── 00-masalah.md          # masalah, akar masalah, dampak, alternatif solusi, ruang lingkup
+├── 01-kebutuhan.md        # pengguna, user story, FR/NFR/BR/DR, kriteria penerimaan, keterlacakan
+├── 02-desain.md           # batas sistem, komponen, alur data, hak akses, deploy, teknologi yang ditolak
+├── 03-proses.md           # proses SEKARANG, proses NANTI, status, kondisi tidak normal
+├── 04-data.md             # entitas, kolom, hubungan, aturan, daur hidup, data sensitif
+├── 05-tampilan.md         # layar, elemen, semua kondisi (kosong/memuat/gagal/berhasil)
+├── 06-uji.md              # strategi, kasus uji, kasus di luar jalur normal, bukti
+├── 07-urutan-kerja.md     # tahap, urutan fitur, definisi selesai, tonggak
+└── 08-risiko.md           # risiko, asumsi, pertanyaan terbuka, catatan keputusan
+templates/ATURAN-AGEN.md   # kontrak untuk agen AI — disalin jadi AGENTS.md di proyekmu
+scripts/new_project.py     # salin docs/ + AGENTS.md ke folder proyek baru
+```
+
+Sembilan dokumen, bukan dua belas. Yang dipakai saja — tidak ada dokumen yang cuma jadi hiasan.
+Total ±900 baris untuk kesembilannya, jadi tidak ada yang berat diisi.
 
 ---
 
 ## Cara pakai
 
-### Opsi A — scaffolding otomatis (disarankan)
-
 ```bash
 git clone https://github.com/Arkanuy/spec-blueprint.git
 cd spec-blueprint
-python scripts/new_project.py
+python scripts/new_project.py --target ~/projects/nama-proyekmu
 ```
 
-Script menanyakan nama proyek, jenis, domain bisnis, stack, dan pemilik produk — lalu menghasilkan
-folder proyek baru.
-
-Non-interaktif (dengan skeleton kode yang bisa dijalankan):
+Tidak ada script? Salin manual juga bisa — nama sumbernya `ATURAN-AGEN.md`, tapi di foldermu
+beri nama `AGENTS.md` supaya agen AI otomatis membacanya:
 
 ```bash
-python scripts/new_project.py \
-  --name "Sistem Kasir Toko Berkah" \
-  --target ~/projects/kasir-berkah \
-  --type cli \
-  --domain "retail / toko kelontong" \
-  --stack "Python 3.10+ (stdlib), SQLite" \
-  --owner "Toko Berkah" \
-  --strip-examples --with-code
+mkdir -p ~/projects/nama-proyekmu
+cp -r docs ~/projects/nama-proyekmu/
+cp templates/ATURAN-AGEN.md ~/projects/nama-proyekmu/AGENTS.md
 ```
 
-Flag lengkap:
+Lalu isi berurutan mulai dari `docs/00-masalah.md`. Urutan lengkapnya ada di `docs/README.md`.
+
+Flag `new_project.py`:
 
 | Flag | Arti |
 |---|---|
-| `--name` `--target` `--type` `--domain` `--stack` `--owner` | Identitas proyek (yang kosong ditanyakan, atau diisi default) |
-| `--strip-examples` | Buang semua blok `<!-- EXAMPLE-START -->` dari dokumen hasil |
-| `--with-code` | Sertakan skeleton kode dari `templates/code/` (bisa dijalankan & diuji) |
-| `--no-git` | Jangan jalankan `git init` |
-| `--in-place` | Tulis ke folder saat ini, bukan ke subfolder baru |
+| `--target` | Folder proyek baru (wajib) |
 | `--force` | Izinkan menulis ke folder yang sudah berisi |
 | `--dry-run` | Tampilkan rencana, tidak menulis apa pun |
-| `--non-interactive` | Jangan bertanya; nilai kosong diisi default |
-| `--list-examples` | Tampilkan contoh proyek terisi, lalu keluar |
-
-Jenis proyek yang dikenali: `web`, `mobile`, `desktop`, `api`, `cli`, `library`.
-
-### Opsi B — manual
-
-Salin `templates/docs/`, `templates/AGENTS.md`, `templates/prompts/`, `templates/checklists/` ke repo
-proyekmu, lalu ganti token `{{...}}` (cari semua `{{`).
 
 ---
 
-## Lihat contoh yang sudah terisi dulu
-
-Kelemahan terbesar template adalah orang tidak tahu "kalau sudah benar, isinya seperti apa".
-Contohnya ada di repo ini, terisi penuh dari dokumen sampai kode:
-
-```bash
-python scripts/new_project.py --list-examples
-```
-
-`examples/kasir-berkah/` berisi:
-
-- 11 dokumen yang sudah diisi (nol placeholder, nol `[isi]`)
-- kode kasir Python stdlib-only yang benar-benar jalan (`python -m app --help`)
-- unit test, plus bukti keluaran perintah di `examples/kasir-berkah/bukti/`
-
-Baca contohnya **sebelum** mengisi dokumenmu sendiri — terutama `00-discovery.md` dan
-`10-decisions.md`, dua dokumen yang paling sering dilewati.
-
----
-
-## Alur kerja spec-first
+## Alur pengisian
 
 ```
-1. DISCOVER    → isi 00-discovery.md         (masalah, stakeholder, proses sekarang)
-2. DEFINE      → isi 01-prd.md               (tujuan, user, fitur, scope, metrik)
-3. SPECIFY     → isi 02-requirements.md      (FR/NFR/BR, bisa diuji, ber-ID)
-4. DESIGN      → isi 03/04/05/06             (arsitektur, workflow, data, UI)
-5. GATE        → checklists/gate-1-sebelum-coding.md
-6. BUILD       → prompts/02-implement-feature.md  (satu fitur, satu sesi)
-7. VERIFY      → checklists/gate-2-per-fitur-selesai.md
-8. RELEASE     → checklists/gate-3-sebelum-rilis.md
+1. MASALAH   → 00-masalah.md     apa masalahnya, apa akar masalahnya, sistem memang jawabannya?
+2. KEBUTUHAN → 01-kebutuhan.md   perilaku apa yang harus dipenuhi (ber-ID, bisa diuji)
+3. DESAIN    → 02-desain.md      disusun bagaimana, batasnya di mana
+4. PROSES    → 03-proses.md      sekarang vs nanti
+5. DATA      → 04-data.md        apa yang disimpan dan apa yang menjaganya benar
+6. TAMPILAN  → 05-tampilan.md    apa yang dilihat pengguna, termasuk kondisi gagal
+7. UJI       → 06-uji.md         bagaimana dibuktikan benar
+8. URUTAN    → 07-urutan-kerja.md dikerjakan berurutan bagaimana
+9. RISIKO    → 08-risiko.md      apa yang bisa gagal, kenapa keputusan diambil
 ```
 
-Aturan kerasnya hanya satu: **jangan minta AI menulis fitur yang requirement-nya belum ada ID-nya.**
+Aturan kerasnya satu: **jangan minta AI menulis fitur yang belum punya ID kebutuhan.**
 
 ---
 
-## Isi repo
+## Prinsip
 
-```
-spec-blueprint/
-├── templates/                  # yang disalin ke proyek baru
-│   ├── docs/                   #   11 dokumen inti (00-discovery … 10-decisions)
-│   ├── AGENTS.md               #   kontrak kerja untuk agen AI di proyekmu
-│   ├── prompts/                #   4 prompt siap pakai (generate/implement/review/sync)
-│   ├── checklists/             #   3 gate (sebelum coding / per fitur / sebelum rilis)
-│   ├── SKILL.md                #   template skill (kalau kamu pakai sistem skill)
-│   └── code/                   #   skeleton kode contoh (--with-code)
-├── examples/kasir-berkah/      # contoh terisi penuh: 11 dokumen + kode + bukti uji
-├── scripts/new_project.py      # generator proyek baru
-└── .github/workflows/verify.yml
-```
-
-Catatan: **dokumen proyek hasil generate ada di folder proyekmu, bukan di repo ini.** Repo ini
-adalah kit-nya; `templates/` adalah bahan mentahnya.
-
----
-
-## Urutan 11 dokumen (jangan dilompati)
-
-| # | Dokumen | Menjawab |
-|---|---|---|
-| 0 | `00-discovery.md` | Apa masalah nyatanya, dan apakah sistem layak dibuat? |
-| 1 | `01-prd.md` | Apa yang dibangun, untuk siapa, sampai mana batasnya |
-| 2 | `02-requirements.md` | Syarat detail yang bisa diuji (US/FR/NFR/BR/DR + AC) |
-| 3 | `03-architecture.md` | Sistem tersusun dari apa, batasnya di mana |
-| 4 | `04-workflow.md` | Proses berjalan sekarang vs sesudahnya |
-| 5 | `05-data-model.md` | Data apa yang disimpan dan apa yang menjaganya benar |
-| 6 | `06-ui-ux.md` | Apa yang dilihat pengguna, termasuk semua kondisi gagal |
-| 7 | `07-test-plan.md` | Bagaimana dibuktikan benar |
-| 8 | `08-roadmap.md` | Dikerjakan berurutan bagaimana |
-| 9 | `09-risks.md` | Apa yang bisa gagal, apa yang masih diasumsikan |
-| 10 | `10-decisions.md` | Kenapa keputusan diambil (ADR) + catatan perubahan scope |
-
----
-
-## Prinsip yang dipegang
-
-1. **Business first, technology last.** Teknologi dipilih karena kebutuhan, bukan sebaliknya.
-2. **Setiap fitur harus bisa dilacak** ke masalah → kebutuhan → requirement → fungsi → uji.
-3. **Pisahkan fakta, asumsi, dan dugaan.** Kalau belum diverifikasi, tulis apa adanya di `09-risks.md`.
-4. **Scope yang kecil tapi jelas menang** atas scope besar yang samar.
-5. **Dokumen ikut berubah** setiap kali scope berubah (`10-decisions.md` wajib diisi).
-6. **Tidak ada requirement yang tidak bisa diuji.**
-7. **Contoh lebih meyakinkan daripada janji.** Karena itu repo ini menyertakan satu proyek contoh
-   yang dokumennya terisi sampai ke kode dan bukti ujinya.
-
----
-
-## Verifikasi
-
-Repo ini diverifikasi otomatis di setiap push (`.github/workflows/verify.yml`):
-
-1. Struktur berkas wajib lengkap
-2. `python -m py_compile` untuk generator
-3. Dry-run generator
-4. Generate nyata + periksa **nol sisa `{{...}}`**, **nol sisa blok contoh**, nilai proyek benar-benar tersubstitusi
-5. Folder target yang tidak kosong harus ditolak (exit code ≠ 0)
-6. Jalankan unit test skeleton kode contoh
+1. **Masalah dulu, teknologi terakhir.** Teknologi dipilih karena kebutuhan, bukan sebaliknya.
+2. **Setiap fitur bisa dilacak** ke masalah → kebutuhan → kode → uji.
+3. **Pisahkan fakta, asumsi, dan dugaan.** Yang belum diverifikasi ditulis apa adanya.
+4. **Ruang lingkup kecil tapi jelas menang** atas ruang lingkup besar yang samar.
+5. **Tidak ada kebutuhan yang tidak bisa diuji.**
+6. **Tidak ada kolom yang hanya jadi hiasan.** Setiap bagian harus mencegah satu jenis kesalahan.
 
 ---
 
 ## Untuk tugas kuliah (Sistem Informasi)
 
-Struktur di repo ini memetakan artefak yang biasa diminta di mata kuliah Analisis & Perancangan
-Sistem: konteks bisnis, stakeholder, AS-IS/TO-BE, kebutuhan fungsional & non-fungsional, aturan
-bisnis, model data, use case, dan justifikasi kelayakan. Bagian penilaian yang sering hilang di
-pekerjaan mahasiswa — *kenapa masalahnya nyata* dan *kenapa solusinya proporsional* — ditangani di
-`00-discovery.md` (termasuk tabel alternatif solusi) dan `08-roadmap.md`.
+Struktur ini memetakan artefak yang biasa diminta di mata kuliah Analisis & Perancangan Sistem:
+konteks bisnis, stakeholder, AS-IS/TO-BE, kebutuhan fungsional & non-fungsional, aturan bisnis,
+model data, use case, dan justifikasi kelayakan.
+
+Bagian yang paling sering hilang di pekerjaan mahasiswa — *kenapa masalahnya nyata* dan *kenapa
+solusinya proporsional* — ditangani di `00-masalah.md` (bagian akar masalah dan tabel alternatif
+solusi yang menyertakan opsi tanpa sistem) dan `07-urutan-kerja.md`.
 
 ---
 
-## Kontribusi
+## Lisensi
 
-Lihat [CONTRIBUTING.md](CONTRIBUTING.md). Lisensi MIT.
+MIT.
